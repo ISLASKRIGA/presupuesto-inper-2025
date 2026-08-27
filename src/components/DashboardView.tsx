@@ -23,7 +23,7 @@ import {
   formatCurrency, 
   formatCompactCurrency 
 } from '../services/budgetService';
-import { TrendingUp, PieChart as PieIcon, BarChart2, CreditCard, Award, Activity, Layers, Stethoscope } from 'lucide-react';
+import { TrendingUp, PieChart as PieIcon, BarChart2, CreditCard, Award, Activity, Layers, Stethoscope, ShieldCheck, AlertTriangle } from 'lucide-react';
 
 interface DashboardViewProps {
   items: BudgetItem[];
@@ -31,7 +31,7 @@ interface DashboardViewProps {
 }
 
 export const DashboardView: React.FC<DashboardViewProps> = ({ items, kpis }) => {
-  const [chartFilter, setChartFilter] = useState<'todas' | 'mensual' | 'capitulos' | 'proveedores'>('todas');
+  const [chartFilter, setChartFilter] = useState<'todas' | 'ejecutivo' | 'capitulos' | 'criticas' | 'laassp'>('todas');
 
   const monthlyData = computeMonthlyBreakdown(items);
   const topPartidas = computeTopPartidas(items, 8);
@@ -40,14 +40,14 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ items, kpis }) => 
 
   // Capítulo 1000 ($906.48 M), Capítulo 3000 ($329.85 M), Capítulo 2000 ($76.60 M)
   const chapterPieData = [
-    { name: 'Capítulo 1000 (Sueldos y Nómina)', value: 906482936, color: '#007AFF' },
-    { name: 'Capítulo 3000 (Servicios Generales)', value: kpis.cap3000Parcial, color: '#5856D6' },
-    { name: 'Capítulo 2000 (Medicinas y Materiales)', value: kpis.cap2000Parcial, color: '#34C759' }
+    { name: 'Capítulo 1000 (Servicios Personales / Nómina)', value: 906482936, color: '#3C0C1F' },
+    { name: 'Capítulo 3000 (Servicios Generales e Infraestructura)', value: kpis.cap3000Parcial, color: '#2563EB' },
+    { name: 'Capítulo 2000 (Materiales y Suministros Médicos)', value: kpis.cap2000Parcial, color: '#059669' }
   ];
 
   const cap2024vs2025 = [
-    { cap: 'Cap 1000 (Sueldos)', y2024: 855934344, y2025: 906482936 },
-    { cap: 'Cap 2000 (Medicinas)', y2024: 164480532, y2025: 76595744 },
+    { cap: 'Cap 1000 (Personal)', y2024: 855934344, y2025: 906482936 },
+    { cap: 'Cap 2000 (Insumos)', y2024: 164480532, y2025: 76595744 },
     { cap: 'Cap 3000 (Servicios)', y2024: 400856497, y2025: 329849243 },
   ];
 
@@ -61,19 +61,24 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ items, kpis }) => 
   return (
     <div className="space-y-8">
       
-      {/* Chart Section Header & Functional View Filter */}
+      {/* Dynamic Executive View Selector - Public Finance Expert Style */}
       <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
         <div>
-          <h2 className="text-xl font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+          <div className="flex items-center space-x-2 mb-1">
+            <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-[#3C0C1F]/10 dark:bg-amber-400/10 text-[#3C0C1F] dark:text-amber-300 border border-[#3C0C1F]/20 dark:border-amber-400/30">
+              Gobernanza Financiera Institucional
+            </span>
+          </div>
+          <h2 className="text-xl font-black text-slate-900 dark:text-white tracking-tight flex items-center gap-2">
             <Activity className="w-5 h-5 text-[#3C0C1F] dark:text-amber-400" />
-            Panel Integrado de Gráficas Financieras INPER
+            Tablero de Control para la Dirección de Administración y Finanzas
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Análisis multidimensional del presupuesto (Tendencias, Composición, Comparativos y Proveedores)
+            Monitoreo analítico del Techo Presupuestal SHCP, Eficiencia de Devengado y Auditoría de Contratación Pública
           </p>
         </div>
 
-        {/* Dynamic Functional View Selector Buttons */}
+        {/* Executive Tab Selector Buttons */}
         <div className="flex flex-wrap items-center gap-1.5 bg-slate-100 dark:bg-slate-800 p-1.5 rounded-2xl border border-slate-200 dark:border-slate-700 text-xs font-bold w-full lg:w-auto">
           
           <button
@@ -84,18 +89,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ items, kpis }) => 
                 : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            🌐 Ver Todas (7 Gráficas)
+            📊 Ver Consolidado Integral
           </button>
 
           <button
-            onClick={() => setChartFilter('mensual')}
+            onClick={() => setChartFilter('ejecutivo')}
             className={`px-3.5 py-2 rounded-xl transition-all ${
-              chartFilter === 'mensual'
+              chartFilter === 'ejecutivo'
                 ? 'bg-[#3C0C1F] text-amber-300 shadow-md border border-amber-400/30 font-black'
                 : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            📈 Tendencia Mensual
+            📈 Resumen Ejecutivo SHCP
           </button>
 
           <button
@@ -106,33 +111,49 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ items, kpis }) => 
                 : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            📊 Comparativo 2024 vs 2025
+            📑 Composición PEF por Capítulo
           </button>
 
           <button
-            onClick={() => setChartFilter('proveedores')}
+            onClick={() => setChartFilter('criticas')}
             className={`px-3.5 py-2 rounded-xl transition-all ${
-              chartFilter === 'proveedores'
+              chartFilter === 'criticas'
                 ? 'bg-[#3C0C1F] text-amber-300 shadow-md border border-amber-400/30 font-black'
                 : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
             }`}
           >
-            🏆 Ranking Proveedores
+            🏥 Partidas Críticas Hospitalarias
+          </button>
+
+          <button
+            onClick={() => setChartFilter('laassp')}
+            className={`px-3.5 py-2 rounded-xl transition-all ${
+              chartFilter === 'laassp'
+                ? 'bg-[#3C0C1F] text-amber-300 shadow-md border border-amber-400/30 font-black'
+                : 'text-slate-600 dark:text-slate-300 hover:text-slate-900 dark:hover:text-white'
+            }`}
+          >
+            ⚖️ Dictamen Proveedores (LAASSP)
           </button>
 
         </div>
       </div>
 
       {/* Gráfica 1: Comportamiento Mensual del Presupuesto */}
-      {(chartFilter === 'todas' || chartFilter === 'mensual') && (
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-sm animate-fadeIn">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+      {(chartFilter === 'todas' || chartFilter === 'ejecutivo') && (
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-sm animate-fadeIn space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <h3 className="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+              <div className="flex items-center space-x-2">
+                <span className="text-[10px] font-black uppercase tracking-wider text-blue-600 dark:text-blue-400 bg-blue-50 dark:bg-blue-900/30 px-2 py-0.5 rounded-full border border-blue-200 dark:border-blue-800">
+                  Curva S de Devengado Institucional
+                </span>
+              </div>
+              <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2 mt-1">
                 <TrendingUp className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                Gráfica 1: Ejercicio Presupuestal Mensual (Capítulo 3000 vs Capítulo 2000)
+                Ejecución Presupuestal Mensual (Capítulo 3000 Servicios vs Capítulo 2000 Insumos)
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Distribución de dispersiones mes a mes en el año fiscal</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Comportamiento de la dispersión de flujo contable Enero - Diciembre 2025</p>
             </div>
             <div className="flex items-center space-x-4 text-xs font-semibold">
               <span className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
@@ -141,7 +162,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ items, kpis }) => 
               </span>
               <span className="flex items-center gap-1.5 text-slate-700 dark:text-slate-300">
                 <span className="w-3 h-3 rounded bg-emerald-500 inline-block"></span>
-                Cap 2000 (Medicinas)
+                Cap 2000 (Insumos)
               </span>
             </div>
           </div>
@@ -183,11 +204,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ items, kpis }) => 
           {/* Gráfica 2: Composición del Gasto por Capítulo */}
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col justify-between">
             <div>
-              <h3 className="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2 mb-1">
+              <div className="flex items-center space-x-2 mb-1">
+                <span className="text-[10px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-800">
+                  Estructura PEF 2025
+                </span>
+              </div>
+              <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2 mb-1">
                 <PieIcon className="w-5 h-5 text-indigo-600 dark:text-indigo-400" />
-                Gráfica 2: Estructura del Gasto Público por Capítulo
+                Estructura del Gasto Autorizado por Capítulo
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Distribución porcentual del presupuesto autorizado ($1,317 M)</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Ponderación presupuestal del Techo Modificado ($1,317 M)</p>
 
               <div className="h-64 w-full">
                 <ResponsiveContainer width="100%" height="100%">
@@ -231,11 +257,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ items, kpis }) => 
 
           {/* Gráfica 3: Top Partidas Presupuestales */}
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-sm">
-            <h3 className="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2 mb-1">
+            <div className="flex items-center space-x-2 mb-1">
+              <span className="text-[10px] font-black uppercase tracking-wider text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/30 px-2 py-0.5 rounded-full border border-purple-200 dark:border-purple-800">
+                Clasificación por Objeto del Gasto (COG)
+              </span>
+            </div>
+            <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2 mb-1">
               <BarChart2 className="w-5 h-5 text-purple-600 dark:text-purple-400" />
-              Gráfica 3: Top Partidas Presupuestales de Mayor Importe
+              Partidas Presupuestales de Mayor Impacto Financiero
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Partidas con mayor concentración de recursos en 2025</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Partidas con mayor devengado acumulado en el ejercicio 2025</p>
 
             <div className="h-72 w-full">
               <ResponsiveContainer width="100%" height="100%">
@@ -258,12 +289,17 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ items, kpis }) => 
 
       {/* Comparative 2024 vs 2025 Chart */}
       {(chartFilter === 'todas' || chartFilter === 'capitulos') && (
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-sm animate-fadeIn">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-sm animate-fadeIn space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <h3 className="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+              <div className="flex items-center space-x-2">
+                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                  Variación Interanual
+                </span>
+              </div>
+              <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2 mt-1">
                 <Layers className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                Gráfica 4: Comparativo Anual de Techo Presupuestal (Cuenta Pública 2024 vs 2025)
+                Comparativo de Techo Presupuestal (Cuenta Pública 2024 vs 2025)
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">Variación y comportamiento por capítulo de gasto</p>
             </div>
@@ -289,17 +325,23 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ items, kpis }) => 
       )}
 
       {/* Partida 35201 Special Monitoring Chart */}
-      {(chartFilter === 'todas' || chartFilter === 'mensual') && (
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-sm animate-fadeIn">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+      {(chartFilter === 'todas' || chartFilter === 'criticas') && (
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-sm animate-fadeIn space-y-4">
+          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
-              <h3 className="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
+              <div className="flex items-center space-x-2">
+                <span className="text-[10px] font-black uppercase tracking-wider text-rose-600 dark:text-rose-400 bg-rose-50 dark:bg-rose-900/30 px-2 py-0.5 rounded-full border border-rose-200 dark:border-rose-800">
+                  Auditoría Médica y Electromedicina
+                </span>
+              </div>
+              <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2 mt-1">
                 <Stethoscope className="w-5 h-5 text-rose-600 dark:text-rose-400" />
-                Gráfica 5: Auditoría Especial Partida 35201 (Mantenimiento Equipo Médico)
+                Monitoreo Especial Partida 35201 (Mantenimiento de Equipo Médico de Alta Especialidad)
               </h3>
               <p className="text-xs text-slate-500 dark:text-slate-400">Techo Modificado ($1.80 M) vs Devengado por Actividad Institucional</p>
             </div>
-            <span className="text-xs font-bold px-3 py-1 rounded-full bg-rose-50 dark:bg-rose-900/30 text-rose-600 dark:text-rose-300 border border-rose-200 dark:border-rose-800">
+            <span className="text-xs font-bold px-3 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border border-emerald-200 dark:border-emerald-800 flex items-center gap-1.5">
+              <ShieldCheck className="w-4 h-4 text-emerald-600" />
               100% Cumplimiento Operativo
             </span>
           </div>
@@ -315,8 +357,8 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ items, kpis }) => 
                   contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '16px', color: '#fff', fontSize: '12px' }}
                 />
                 <Legend />
-                <Bar dataKey="mod" name="Presupuesto Modificado" fill="#f43f5e" radius={[6, 6, 0, 0]} />
-                <Bar dataKey="dev" name="Presupuesto Devengado" fill="#06b6d4" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="mod" name="Presupuesto Modificado Autorizado" fill="#f43f5e" radius={[6, 6, 0, 0]} />
+                <Bar dataKey="dev" name="Presupuesto Devengado Ejercido" fill="#06b6d4" radius={[6, 6, 0, 0]} />
               </BarChart>
             </ResponsiveContainer>
           </div>
@@ -324,16 +366,21 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ items, kpis }) => 
       )}
 
       {/* Grid of Vendor & Bank Account Dispersion Charts */}
-      {(chartFilter === 'todas' || chartFilter === 'proveedores') && (
+      {(chartFilter === 'todas' || chartFilter === 'laassp') && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fadeIn">
           
           {/* Gráfica 6: Ranking de Proveedores Pareto */}
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-sm">
-            <h3 className="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2 mb-1">
+            <div className="flex items-center space-x-2 mb-1">
+              <span className="text-[10px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800">
+                Dictamen LAASSP
+              </span>
+            </div>
+            <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2 mb-1">
               <Award className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-              Gráfica 6: Concentración de Proveedores Principales
+              Concentración de Contratación Pública en Proveedores (Pareto 80/20)
             </h3>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Top 8 proveedores por volumen total adjudicado</p>
+            <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Top 8 empresas adjudicadas por volumen total de facturación</p>
 
             <div className="h-72 w-full">
               <ResponsiveContainer width="100%" height="100%">
@@ -354,11 +401,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ items, kpis }) => 
           {/* Gráfica 7: Distribución por Cuenta Bancaria */}
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col justify-between">
             <div>
-              <h3 className="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2 mb-1">
+              <div className="flex items-center space-x-2 mb-1">
+                <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
+                  Tesorería de la Federación (TESOFE)
+                </span>
+              </div>
+              <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2 mb-1">
                 <CreditCard className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                Gráfica 7: Distribución por Cuentas Bancarias Institucionales
+                Distribución por Cuentas Bancarias Autorizadas
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Origen y dispersión contable de los pagos</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 mb-6">Origen y dispersión de fondos para pagos y contra-recibos</p>
 
               <div className="h-56 w-full">
                 <ResponsiveContainer width="100%" height="100%">
@@ -394,7 +446,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ items, kpis }) => 
                     Cuenta: {c.account}
                   </span>
                   <span className="font-extrabold text-slate-900 dark:text-white font-mono">
-                    {formatCompactCurrency(c.total)} ({c.count} pagos)
+                    {formatCompactCurrency(c.total)} ({c.count} operaciones)
                   </span>
                 </div>
               ))}
