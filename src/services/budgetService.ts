@@ -1,33 +1,33 @@
-import { BudgetItem, KPIStats, MonthlyBreakdown, PartidaBreakdown, ProveedorBreakdown, BudgetDataset } from '../types/budget';
+import { BudgetItem, KPIStats, MonthlyBreakdown, PartidaBreakdown, ProveedorBreakdown, CuentaBreakdown, BudgetDataset } from '../types/budget';
 
 export const fetchBudgetData = async (): Promise<BudgetDataset> => {
-  const response = await fetch('/budget_data.json?v=' + new Date().getTime());
+  const response = await fetch('/budget_data.json');
   if (!response.ok) {
-    throw new Error(`Error al cargar los datos presupuestales (${response.status})`);
+    throw new Error(`Failed to load budget data: ${response.statusText}`);
   }
   return await response.json();
 };
 
-export const formatCurrency = (amount: number): string => {
+export const formatCurrency = (val: number): string => {
   return new Intl.NumberFormat('es-MX', {
     style: 'currency',
     currency: 'MXN',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
-  }).format(amount);
+  }).format(val);
 };
 
-export const formatCompactCurrency = (amount: number): string => {
-  if (amount >= 1000000000) {
-    return `$${(amount / 1000000000).toFixed(2)} B`;
+export const formatCompactCurrency = (val: number): string => {
+  if (Math.abs(val) >= 1000000000) {
+    return `$${(val / 1000000000).toFixed(2)} B`;
   }
-  if (amount >= 1000000) {
-    return `$${(amount / 1000000).toFixed(2)} M`;
+  if (Math.abs(val) >= 1000000) {
+    return `$${(val / 1000000).toFixed(2)} M`;
   }
-  if (amount >= 1000) {
-    return `$${(amount / 1000).toFixed(1)} k`;
+  if (Math.abs(val) >= 1000) {
+    return `$${(val / 1000).toFixed(1)} k`;
   }
-  return `$${amount.toFixed(2)}`;
+  return `$${val.toFixed(2)}`;
 };
 
 export const computeKPIs = (items: BudgetItem[]): KPIStats => {
@@ -79,7 +79,7 @@ export const computeMonthlyBreakdown = (items: BudgetItem[]): MonthlyBreakdown[]
   }
 
   items.forEach(item => {
-    let monthIndex = item.mes_aplic;
+    let monthIndex: number | null = item.mes_aplic || null;
 
     if (!monthIndex && item.fecha_pago) {
       const parts = item.fecha_pago.split('-');
@@ -88,18 +88,17 @@ export const computeMonthlyBreakdown = (items: BudgetItem[]): MonthlyBreakdown[]
       }
     }
 
-    if (!monthIndex || monthIndex < 1 || monthIndex > 12) {
-      monthIndex = 1;
-    }
+    // Only assign if it's a valid calendar month (1-12)
+    if (monthIndex && monthIndex >= 1 && monthIndex <= 12) {
+      const current = monthMap.get(monthIndex)!;
+      current.total += item.importe_parcial;
+      current.count += 1;
 
-    const current = monthMap.get(monthIndex)!;
-    current.total += item.importe_parcial;
-    current.count += 1;
-
-    if (item.capitulo_code === '3000') {
-      current.cap3000 += item.importe_parcial;
-    } else if (item.capitulo_code === '2000') {
-      current.cap2000 += item.importe_parcial;
+      if (item.capitulo_code === '3000') {
+        current.cap3000 += item.importe_parcial;
+      } else if (item.capitulo_code === '2000') {
+        current.cap2000 += item.importe_parcial;
+      }
     }
   });
 
@@ -158,12 +157,12 @@ export const computeTopProveedores = (items: BudgetItem[], limit: number = 10): 
   });
 
   return Array.from(map.entries()).map(([name, val]) => {
-    let topConcepto = 'Varios conceptos';
-    let maxC = 0;
-    val.conceptos.forEach((cnt, cName) => {
-      if (cnt > maxC) {
-        maxC = cnt;
-        topConcepto = cName;
+    let topConcepto = 'Varios';
+    let maxCount = 0;
+    val.conceptos.forEach((cnt, conc) => {
+      if (cnt > maxCount) {
+        maxCount = cnt;
+        topConcepto = conc;
       }
     });
 
@@ -176,20 +175,22 @@ export const computeTopProveedores = (items: BudgetItem[], limit: number = 10): 
   }).sort((a, b) => b.totalParcial - a.totalParcial).slice(0, limit);
 };
 
-export const computeCuentasBreakdown = (items: BudgetItem[]): { name: string; total: number; count: number }[] => {
+export const computeCuentasBreakdown = (items: BudgetItem[]): CuentaBreakdown[] => {
   const map = new Map<string, { total: number; count: number }>();
 
   items.forEach(item => {
-    const cta = item.cuenta_bancaria || 'Sin Cuenta';
-    if (!map.has(cta)) {
-      map.set(cta, { total: 0, count: 0 });
+    const account = item.banco_cuenta || 'No Especificada';
+    if (!map.has(account)) {
+      map.set(account, { total: 0, count: 0 });
     }
-    const curr = map.get(cta)!;
+    const curr = map.get(account)!;
     curr.total += item.importe_parcial;
     curr.count += 1;
   });
 
-  return Array.from(map.entries())
-    .map(([name, val]) => ({ name, total: val.total, count: val.count }))
-    .sort((a, b) => b.total - a.total);
+  return Array.from(map.entries()).map(([account, val]) => ({
+    account,
+    total: val.total,
+    count: val.count
+  })).sort((a, b) => b.total - a.total);
 };
