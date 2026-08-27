@@ -23,7 +23,7 @@ import {
   formatCurrency, 
   formatCompactCurrency 
 } from '../services/budgetService';
-import { TrendingUp, PieChart as PieIcon, BarChart2, CreditCard, Award, Activity, Layers, Stethoscope, ShieldCheck, AlertTriangle } from 'lucide-react';
+import { TrendingUp, PieChart as PieIcon, BarChart2, CreditCard, Award, Activity, Layers, Stethoscope, ShieldCheck } from 'lucide-react';
 
 interface DashboardViewProps {
   items: BudgetItem[];
@@ -58,11 +58,22 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ items, kpis }) => 
     { name: 'Fte Financiera 4', mod: 52000, dev: 7150 },
   ];
 
+  const customTooltipStyle = {
+    backgroundColor: '#ffffff',
+    borderColor: '#e2e8f0',
+    borderRadius: '16px',
+    color: '#0f172a',
+    fontSize: '12px',
+    boxShadow: '0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.05)',
+    fontWeight: 'bold',
+    padding: '10px 14px'
+  };
+
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 font-sans">
       
-      {/* Dynamic Executive View Selector - Public Finance Expert Style */}
-      <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
+      {/* Dynamic Executive View Selector */}
+      <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col lg:flex-row items-start lg:items-center justify-between gap-4">
         <div>
           <div className="flex items-center space-x-2 mb-1">
             <span className="text-[10px] font-black uppercase tracking-widest px-2.5 py-0.5 rounded-full bg-[#3C0C1F]/10 dark:bg-amber-400/10 text-[#3C0C1F] dark:text-amber-300 border border-[#3C0C1F]/20 dark:border-amber-400/30">
@@ -141,7 +152,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ items, kpis }) => 
 
       {/* Gráfica 1: Comportamiento Mensual del Presupuesto */}
       {(chartFilter === 'todas' || chartFilter === 'ejecutivo') && (
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-sm animate-fadeIn space-y-4">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-xs animate-fadeIn space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <div className="flex items-center space-x-2">
@@ -180,7 +191,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ items, kpis }) => 
                 />
                 <Tooltip 
                   formatter={(value: any) => [formatCurrency(Number(value)), '']}
-                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '16px', color: '#fff', fontSize: '12px' }}
+                  contentStyle={customTooltipStyle}
                 />
                 <Bar dataKey="cap3000" name="Capítulo 3000 (Servicios)" fill="#2563eb" radius={[6, 6, 0, 0]} />
                 <Bar dataKey="cap2000" name="Capítulo 2000 (Medicinas)" fill="#10b981" radius={[6, 6, 0, 0]} />
@@ -202,7 +213,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ items, kpis }) => 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fadeIn">
           
           {/* Gráfica 2: Composición del Gasto por Capítulo */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between">
             <div>
               <div className="flex items-center space-x-2 mb-1">
                 <span className="text-[10px] font-black uppercase tracking-wider text-indigo-600 dark:text-indigo-400 bg-indigo-50 dark:bg-indigo-900/30 px-2 py-0.5 rounded-full border border-indigo-200 dark:border-indigo-800">
@@ -233,7 +244,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ items, kpis }) => 
                     </Pie>
                     <Tooltip 
                       formatter={(val: any) => [formatCurrency(Number(val)), 'Importe']}
-                      contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '16px', color: '#fff', fontSize: '12px' }}
+                      contentStyle={customTooltipStyle}
                     />
                   </PieChart>
                 </ResponsiveContainer>
@@ -256,7 +267,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ items, kpis }) => 
           </div>
 
           {/* Gráfica 3: Top Partidas Presupuestales */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-sm">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-xs">
             <div className="flex items-center space-x-2 mb-1">
               <span className="text-[10px] font-black uppercase tracking-wider text-purple-600 dark:text-purple-400 bg-purple-50 dark:bg-purple-900/30 px-2 py-0.5 rounded-full border border-purple-200 dark:border-purple-800">
                 Clasificación por Objeto del Gasto (COG)
@@ -276,9 +287,9 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ items, kpis }) => 
                   <YAxis type="category" dataKey="code" stroke="#64748b" fontSize={11} tickLine={false} />
                   <Tooltip 
                     formatter={(val: any) => [formatCurrency(Number(val)), 'Total Dispersado']}
-                    contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '16px', color: '#fff', fontSize: '12px' }}
+                    contentStyle={customTooltipStyle}
                   />
-                  <Bar dataKey="total" fill="#8b5cf6" radius={[0, 8, 8, 0]} />
+                  <Bar dataKey="totalParcial" name="Importe Parcial" fill="#8b5cf6" radius={[0, 8, 8, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -289,7 +300,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ items, kpis }) => 
 
       {/* Comparative 2024 vs 2025 Chart */}
       {(chartFilter === 'todas' || chartFilter === 'capitulos') && (
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-sm animate-fadeIn space-y-4">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-xs animate-fadeIn space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <div className="flex items-center space-x-2">
@@ -313,7 +324,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ items, kpis }) => 
                 <YAxis stroke="#64748b" fontSize={11} tickLine={false} tickFormatter={(v) => `$${(v / 1000000).toFixed(0)}M`} />
                 <Tooltip 
                   formatter={(val: any) => [formatCurrency(Number(val)), '']}
-                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '16px', color: '#fff', fontSize: '12px' }}
+                  contentStyle={customTooltipStyle}
                 />
                 <Legend />
                 <Bar dataKey="y2024" name="Cuenta Pública 2024" fill="#94a3b8" radius={[6, 6, 0, 0]} />
@@ -326,7 +337,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ items, kpis }) => 
 
       {/* Partida 35201 Special Monitoring Chart */}
       {(chartFilter === 'todas' || chartFilter === 'criticas') && (
-        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-sm animate-fadeIn space-y-4">
+        <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-xs animate-fadeIn space-y-4">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2">
             <div>
               <div className="flex items-center space-x-2">
@@ -354,7 +365,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ items, kpis }) => 
                 <YAxis stroke="#64748b" fontSize={11} tickLine={false} tickFormatter={(v) => `$${(v / 1000).toFixed(0)}k`} />
                 <Tooltip 
                   formatter={(val: any) => [formatCurrency(Number(val)), '']}
-                  contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '16px', color: '#fff', fontSize: '12px' }}
+                  contentStyle={customTooltipStyle}
                 />
                 <Legend />
                 <Bar dataKey="mod" name="Presupuesto Modificado Autorizado" fill="#f43f5e" radius={[6, 6, 0, 0]} />
@@ -370,7 +381,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ items, kpis }) => 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fadeIn">
           
           {/* Gráfica 6: Ranking de Proveedores Pareto */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-sm">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-xs">
             <div className="flex items-center space-x-2 mb-1">
               <span className="text-[10px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800">
                 Dictamen LAASSP
@@ -390,16 +401,16 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ items, kpis }) => 
                   <YAxis type="category" dataKey="name" stroke="#64748b" fontSize={10} tickLine={false} width={110} />
                   <Tooltip 
                     formatter={(val: any) => [formatCurrency(Number(val)), 'Total Acumulado']}
-                    contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '16px', color: '#fff', fontSize: '12px' }}
+                    contentStyle={customTooltipStyle}
                   />
-                  <Bar dataKey="total" fill="#f59e0b" radius={[0, 8, 8, 0]} />
+                  <Bar dataKey="totalParcial" name="Importe Acumulado" fill="#f59e0b" radius={[0, 8, 8, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
 
           {/* Gráfica 7: Distribución por Cuenta Bancaria */}
-          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-sm flex flex-col justify-between">
+          <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-xs flex flex-col justify-between">
             <div>
               <div className="flex items-center space-x-2 mb-1">
                 <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
@@ -431,7 +442,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ items, kpis }) => 
                     </Pie>
                     <Tooltip 
                       formatter={(val: any) => [formatCurrency(Number(val)), 'Monto Pagado']}
-                      contentStyle={{ backgroundColor: '#0f172a', borderColor: '#334155', borderRadius: '16px', color: '#fff', fontSize: '12px' }}
+                      contentStyle={customTooltipStyle}
                     />
                   </PieChart>
                 </ResponsiveContainer>
