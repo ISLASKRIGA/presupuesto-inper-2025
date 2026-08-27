@@ -41,7 +41,7 @@ DATOS DE GOBERNANZA PRESUPUESTAL Y CUENTA PÚBLICA INPER 2025:
 - Techo Presupuestal Modificado (Autorizado por SHCP): ${formatCurrency(totalMod)} (${formatCompactCurrency(totalMod)})
 - Presupuesto Devengado Ejercido: ${formatCurrency(totalDev)} (${formatCompactCurrency(totalDev)}) - 99.69% de eficiencia presupuestaria.
 - Remanente por Ejercer en Tesorería (TESOFE): ${formatCurrency(totalMod - totalDev)} (0.31% del presupuesto total).
-- Capítulo 1000 (Servicios Personales / Nómina de Médicos, Enfermeras y Especialistas): ${formatCurrency(cap1000)} (${formatCompactCurrency(cap1000)}) - Representa el 68.8% del gasto total.
+- Capítulo 1000 (Servicios Personales / Nómina de Médicos, Enfermeras y Especialistas): ${formatCurrency(cap1000)} (${formatCompactCurrency(cap1000)}) - Representa el 68.8% del gasto total del hospital.
 - Capítulo 3000 (Servicios Generales, Subcontratación, Luz, Mantenimiento de Infraestructura): ${formatCurrency(cap3000)} (${formatCompactCurrency(cap3000)}) - Representa el 25.0% del gasto.
 - Capítulo 2000 (Materiales y Suministros / Medicamentos, Material Quirúrgico y Reactivos): ${formatCurrency(cap2000)} (${formatCompactCurrency(cap2000)}) - Representa el 5.8% del gasto.
 - Auditoría Especial Partida 35201 (Mantenimiento Equipo Médico de Alta Especialidad): ${formatCurrency(ptda35201)} (${formatCompactCurrency(ptda35201)}) - 100% de cumplimiento operativo en programas E23, M1 y E22.
@@ -68,11 +68,12 @@ Eres un Experto Senior en Finanzas Públicas y Gobernanza Hacendaria asignado a 
 Hablas y respondes EXACTAMENTE COMO UN HUMANO EXPERTO: de forma cercana, conversacional, fluida, natural y directa, como un colega financiero senior explicándole los números a la Directora o a un usuario interesado.
 
 REGLAS DE COMUNICACIÓN HUMANA Y EXPERTA:
-1. NUNCA suenes como un robot o un contestador automático ("Hola, soy un bot de IA..."). Saluda o responde de forma fluida, cálida y natural ("¡Hola! Mira, analizando los datos del INPER 2025...", "Con gusto te explico las cifras...", "Revisando el presupuesto autorizado por la SHCP...").
+1. NUNCA suenes como un robot o un contestador automático ("Hola, soy un bot de IA..."). Saluda o responde de forma fluida, cálida y natural ("¡Hola! Mira, respondiendo a tu pregunta sobre los recursos del INPER...", "Con mucho gusto te platico sobre el gasto...").
 2. Habla con dominio técnico de las Finanzas Públicas en México (SHCP, PEF, Ley de Presupuesto, TESOFE, Capítulos 1000/2000/3000, Ley de Adquisiciones LAASSP), pero explicando el "por qué" y el impacto práctico con claridad y amabilidad.
-3. Al dar cifras:
-   - Menciona el valor en pesos ($) y su equivalente en millones (MDP) para que sea súper claro de entender.
-   - Explica el contexto práctico (ej. "La mayor parte del dinero, $906 MDP, va a la nómina de doctores y enfermeras, lo cual es normal en un hospital de alta especialidad de tercer nivel").
+3. Al dar cifras del INPER 2025:
+   - Menciona que la mayor cantidad del dinero del hospital se va en el Capítulo 1000 ($906.48 MDP / $906,482,936 MXN), que es la nómina del personal médico, doctores y enfermeras (68.8% del total).
+   - Menciona que el segundo rubro más grande es el Capítulo 3000 ($329.85 MDP), usado para servicios generales, luz, agua y mantenimiento.
+   - Y el Capítulo 2000 ($76.60 MDP) para medicinas e insumos médicos curativos.
 4. Si preguntan sobre saldo o dinero disponible, aclara que quedan $4.14 MDP libres ($4,136,922 MXN) y que el hospital lleva una eficiencia de ejecución ejemplar del 99.69% sin subejercicio.
 5. Mantén respuestas concisas, dinámicas, fáciles de leer y estructuradas con viñetas o párrafos breves.
 
@@ -80,32 +81,51 @@ DATOS OFICIALES Y CONTEXTO DEL INPER 2025:
 ${context}
 `;
 
+  // Build clean history array excluding any previous error messages
+  const validHistory = history.filter(h => !h.text.includes('Lo siento, ocurrió un error'));
+  
+  // Format conversation turn contents
+  const conversationContents: { role: string; parts: { text: string }[] }[] = [];
+  
+  validHistory.slice(-4).forEach(msg => {
+    const role = msg.sender === 'user' ? 'user' : 'model';
+    if (conversationContents.length === 0 || conversationContents[conversationContents.length - 1].role !== role) {
+      conversationContents.push({
+        role,
+        parts: [{ text: msg.text }]
+      });
+    }
+  });
+
+  // Ensure strict role alternating before adding current prompt
+  if (conversationContents.length > 0 && conversationContents[conversationContents.length - 1].role === 'user') {
+    conversationContents.pop();
+  }
+
+  conversationContents.push({
+    role: 'user',
+    parts: [{ text: userQuery }]
+  });
+
   let lastError: Error | null = null;
   const attempts = API_KEYS.length;
 
   for (let i = 0; i < attempts; i++) {
     const { key, index } = getNextApiKey();
     try {
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:generateContent?key=${key}`;
 
-      // Build conversation contents including past user and model messages
-      const conversationContents = history.slice(-6).map(msg => ({
-        role: msg.sender === 'user' ? 'user' : 'model',
-        parts: [{ text: msg.text }]
-      }));
-
-      const contents = [
-        ...conversationContents,
-        {
-          role: "user",
-          parts: [{ text: `${systemPrompt}\n\nPregunta del usuario: ${userQuery}` }]
-        }
-      ];
+      const payload = {
+        systemInstruction: {
+          parts: [{ text: systemPrompt }]
+        },
+        contents: conversationContents
+      };
 
       const response = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ contents })
+        body: JSON.stringify(payload)
       });
 
       if (!response.ok) {
