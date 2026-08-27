@@ -1,0 +1,24 @@
+{
+  "short_name": "Presupuesto INPER",
+  "name": "INPER - Visualizador de Presupuesto Institucional 2025",
+  "description": "Visualizador y Tablero de Control del Presupuesto Institucional INPER - Dirección de Administración y Finanzas",
+  "icons": [
+    {
+      "src": "/apple-touch-icon.png",
+      "sizes": "180x180",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/inper_logo_rounded.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#3C0C1F",
+  "theme_color": "#3C0C1F",
+  "display": "standalone",
+  "orientation": "portrait"
+}
