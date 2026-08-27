@@ -50,7 +50,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ dataset }) => {
     setIsTyping(true);
 
     try {
-      const response = await askGeminiBudgetBot(query, dataset, []);
+      const response = await askGeminiBudgetBot(query, dataset, messages);
       setActiveKeyNum(response.keyIndex);
 
       const botMsg: ChatMessage = {
@@ -78,31 +78,35 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ dataset }) => {
   };
 
   return (
-    <div className="fixed bottom-6 right-6 z-50 flex flex-col items-end font-sans">
+    <div className={`fixed z-50 font-sans transition-all duration-300 ${
+      isOpen 
+        ? 'inset-0 sm:inset-auto sm:bottom-6 sm:right-6' 
+        : 'bottom-6 right-6'
+    }`}>
       
-      {/* Floating Chat Modal Window */}
+      {/* Chat Modal Window (Full Screen on Mobile < sm, Floating Card on Desktop sm+) */}
       {isOpen && (
-        <div className="w-[92vw] sm:w-[420px] h-[580px] bg-gradient-to-b from-white via-white to-blue-50/60 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 rounded-[36px] border border-slate-200/90 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col mb-4 animate-fadeIn">
+        <div className="w-full h-full sm:w-[420px] sm:h-[580px] max-h-[100vh] sm:max-h-[85vh] bg-gradient-to-b from-white via-white to-blue-50/60 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 rounded-none sm:rounded-[36px] border-0 sm:border border-slate-200/90 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col sm:mb-4 animate-fadeIn">
           
           {/* Header */}
-          <div className="p-5 flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 bg-white/80 dark:bg-slate-900/80 backdrop-blur-md">
+          <div className="p-4 sm:p-5 flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md sticky top-0 z-10">
             <div className="flex items-center space-x-3">
               <button
                 onClick={() => setIsOpen(false)}
-                className="p-1.5 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 transition-all"
+                className="p-2 rounded-full hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-600 dark:text-slate-300 transition-all active:scale-95"
                 title="Cerrar"
               >
-                <X className="w-5 h-5" />
+                <X className="w-6 h-6 sm:w-5 sm:h-5" />
               </button>
 
               {/* INPER Emblem Logo */}
-              <div className="w-7 h-7 rounded-lg overflow-hidden shadow-xs border border-slate-200 flex-shrink-0">
+              <div className="w-8 h-8 sm:w-7 sm:h-7 rounded-lg overflow-hidden shadow-xs border border-slate-200 flex-shrink-0">
                 <img src="/inper_logo_rounded.png" alt="INPer Logo" className="w-full h-full object-cover" />
               </div>
 
               <div>
                 <div className="flex items-center space-x-1">
-                  <h3 className="font-extrabold text-slate-900 dark:text-white text-base">Presupuesto IA</h3>
+                  <h3 className="font-extrabold text-slate-900 dark:text-white text-base sm:text-sm">Presupuesto IA</h3>
                   <span className="text-slate-400 text-xs font-semibold flex items-center">
                     INPer <ChevronDown className="w-3.5 h-3.5 ml-0.5" />
                   </span>
@@ -116,14 +120,14 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ dataset }) => {
           </div>
 
           {/* Body Area */}
-          <div className="flex-1 p-5 overflow-y-auto space-y-4 flex flex-col">
+          <div className="flex-1 p-4 sm:p-5 overflow-y-auto space-y-4 flex flex-col">
             
             {/* Initial Welcome Graphic State */}
             {messages.length === 0 && (
               <div className="my-auto flex flex-col items-center justify-center text-center px-4 space-y-5 animate-fadeIn">
                 
                 {/* INPER Emblem Graphic */}
-                <div className="w-32 h-32 rounded-3xl bg-white p-2 shadow-xl border border-slate-200/80 flex items-center justify-center relative group">
+                <div className="w-28 h-28 sm:w-32 sm:h-32 rounded-3xl bg-white p-2 shadow-xl border border-slate-200/80 flex items-center justify-center relative group">
                   <img src="/inper_logo_rounded.png" alt="INPer Emblem" className="w-full h-full object-contain rounded-2xl" />
                 </div>
 
@@ -149,29 +153,28 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ dataset }) => {
                 }`}
               >
                 {msg.sender === 'bot' && (
-                  <div className="w-7 h-7 rounded-full bg-[#3C0C1F] text-amber-300 flex items-center justify-center flex-shrink-0 mt-1 shadow-xs border border-amber-400/30">
+                  <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-[#3C0C1F] to-[#5A1430] text-amber-300 flex items-center justify-center flex-shrink-0 shadow-xs border border-amber-400/30">
                     <Sparkles className="w-3.5 h-3.5" />
                   </div>
                 )}
-
+                
                 <div
-                  className={`max-w-[84%] p-3.5 rounded-2xl text-xs leading-relaxed ${
+                  className={`max-w-[85%] rounded-2xl px-4 py-3 text-xs leading-relaxed ${
                     msg.sender === 'user'
-                      ? 'bg-[#3C0C1F] text-white font-medium rounded-tr-xs shadow-xs'
-                      : 'bg-white dark:bg-slate-800 text-slate-900 dark:text-slate-100 border border-slate-200/80 dark:border-slate-700/80 shadow-xs rounded-tl-xs'
+                      ? 'bg-gradient-to-r from-[#3C0C1F] to-[#4A1027] text-white shadow-md rounded-br-none border border-amber-400/30'
+                      : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200/80 dark:border-slate-700/80 shadow-xs rounded-bl-none font-sans whitespace-pre-wrap'
                   }`}
                 >
-                  <p className="whitespace-pre-line">{msg.text}</p>
-                  <div className="flex items-center justify-between text-[9px] opacity-70 mt-1.5 pt-1 border-t border-slate-100 dark:border-slate-700/50">
-                    <span>{msg.timestamp}</span>
-                    {msg.keyIndex && (
-                      <span className="font-mono text-amber-600 dark:text-amber-400 font-bold">Key #{msg.keyIndex}</span>
-                    )}
+                  {msg.text}
+                  <div className={`text-[9px] mt-1 text-right font-mono ${
+                    msg.sender === 'user' ? 'text-amber-200/70' : 'text-slate-400'
+                  }`}>
+                    {msg.timestamp}
                   </div>
                 </div>
 
                 {msg.sender === 'user' && (
-                  <div className="w-7 h-7 rounded-full bg-slate-800 text-white flex items-center justify-center flex-shrink-0 mt-1 shadow-xs">
+                  <div className="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center flex-shrink-0">
                     <User className="w-3.5 h-3.5" />
                   </div>
                 )}
@@ -179,46 +182,45 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ dataset }) => {
             ))}
 
             {isTyping && (
-              <div className="flex items-center space-x-2 text-slate-500 text-xs p-2">
-                <Sparkles className="w-4 h-4 text-[#3C0C1F] animate-spin" />
-                <span className="font-medium animate-pulse">Presupuesto IA está respondiendo...</span>
+              <div className="flex items-center space-x-2 text-xs text-slate-500 bg-white/80 dark:bg-slate-800/80 p-3 rounded-2xl w-fit border border-slate-200/80 dark:border-slate-700/80 shadow-xs animate-pulse">
+                <Sparkles className="w-3.5 h-3.5 text-amber-500 animate-spin" />
+                <span>Analizando presupuesto INPER 2025...</span>
               </div>
             )}
 
             <div ref={messagesEndRef} />
           </div>
 
-          {/* Bottom Pill Input Footer */}
-          <div className="p-4 bg-white/90 dark:bg-slate-900/90 border-t border-slate-100 dark:border-slate-800">
+          {/* Footer Input Bar */}
+          <div className="p-3 sm:p-4 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md border-t border-slate-100 dark:border-slate-800/80 sticky bottom-0">
             <form
               onSubmit={(e) => {
                 e.preventDefault();
                 handleSendMessage();
               }}
-              className="flex items-center space-x-2 bg-slate-100/90 dark:bg-slate-800/90 rounded-full px-4 py-2.5 border border-purple-200/60 dark:border-purple-900/40 focus-within:border-purple-500 transition-all shadow-xs"
+              className="flex items-center space-x-2 bg-slate-100 dark:bg-slate-800 rounded-full px-4 py-2 border border-slate-200 dark:border-slate-700 focus-within:border-amber-500 transition-all shadow-inner"
             >
               <button
                 type="button"
-                className="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
+                className="p-1 rounded-full text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 transition-colors"
               >
                 <Plus className="w-4 h-4" />
               </button>
 
               <input
                 type="text"
-                placeholder="Pregúntale a Presupuesto IA..."
                 value={inputMessage}
                 onChange={(e) => setInputMessage(e.target.value)}
-                disabled={isTyping}
-                className="flex-1 bg-transparent text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none"
+                placeholder="Escribe tu consulta sobre el presupuesto..."
+                className="flex-1 bg-transparent border-none text-xs text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none"
               />
 
               <button
                 type="submit"
-                disabled={isTyping || !inputMessage.trim()}
-                className="w-8 h-8 rounded-full bg-[#3C0C1F] hover:bg-[#5A1430] text-amber-300 flex items-center justify-center disabled:opacity-40 transition-all shadow-xs"
+                disabled={!inputMessage.trim() || isTyping}
+                className="w-8 h-8 rounded-full bg-gradient-to-tr from-[#3C0C1F] to-[#5E1532] text-amber-300 flex items-center justify-center disabled:opacity-40 disabled:cursor-not-allowed shadow-md hover:scale-105 transition-all border border-amber-400/30"
               >
-                <Send className="w-4 h-4" />
+                <Send className="w-3.5 h-3.5" />
               </button>
             </form>
           </div>
@@ -226,28 +228,25 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ dataset }) => {
         </div>
       )}
 
-      {/* Floating Circular Bubble Button */}
-      <button
-        onClick={() => setIsOpen(!isOpen)}
-        className="w-14 h-14 rounded-full bg-gradient-to-tr from-[#3C0C1F] via-[#4A1027] to-[#5E1532] text-white shadow-2xl border-2 border-amber-400/50 flex items-center justify-center hover:scale-110 active:scale-95 transition-all duration-300 relative group overflow-hidden"
-        title="Abrir Presupuesto IA"
-      >
-        <div className="absolute inset-0 bg-white/10 opacity-0 group-hover:opacity-100 transition-opacity" />
-        
-        {isOpen ? (
-          <X className="w-6 h-6 text-amber-300 transition-transform group-hover:rotate-90" />
-        ) : (
-          <div className="relative flex items-center justify-center">
-            <div className="w-8 h-8 rounded-full overflow-hidden border border-white/30 shadow-xs flex-shrink-0">
-              <img src="/inper_logo_rounded.png" alt="INPer" className="w-full h-full object-cover" />
-            </div>
-            <span className="absolute -top-1 -right-1 flex h-3 w-3">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-3 w-3 bg-amber-400"></span>
-            </span>
+      {/* Floating Trigger Circular Bubble Button (Hidden when open on mobile) */}
+      {(!isOpen) && (
+        <button
+          onClick={() => setIsOpen(true)}
+          className="w-14 h-14 rounded-full bg-gradient-to-tr from-[#3C0C1F] via-[#4A1027] to-[#5E1532] text-white flex items-center justify-center shadow-2xl hover:scale-110 active:scale-95 transition-all duration-300 group border-2 border-amber-400/50 relative"
+          title="Abrir Presupuesto IA"
+        >
+          {/* INPER Logo inside Bubble */}
+          <div className="w-8 h-8 rounded-full overflow-hidden border border-amber-400/60 shadow-xs">
+            <img src="/inper_logo_rounded.png" alt="Presupuesto IA" className="w-full h-full object-cover" />
           </div>
-        )}
-      </button>
+
+          {/* Pulsing Notification Indicator */}
+          <span className="absolute top-0 right-0 flex h-3.5 w-3.5">
+            <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75"></span>
+            <span className="relative inline-flex rounded-full h-3.5 w-3.5 bg-amber-500 border border-slate-900"></span>
+          </span>
+        </button>
+      )}
 
     </div>
   );
