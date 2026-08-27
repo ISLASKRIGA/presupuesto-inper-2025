@@ -35,17 +35,18 @@ export const generateBudgetPromptContext = (dataset: BudgetDataset | null): stri
   const ptda35201 = 1801934;
 
   return `
-DATOS OFICIALES DEL PRESUPUESTO INPER 2025:
+DATOS DE GOBERNANZA PRESUPUESTAL Y CUENTA PÚBLICA INPER 2025:
 - Instituto: Instituto Nacional de Perinatología Isidro Espinosa de los Reyes (INPER)
-- Techo Presupuestal Modificado (SHCP): ${formatCurrency(totalMod)} (${formatCompactCurrency(totalMod)})
-- Ejercido/Devengado Total: ${formatCurrency(totalDev)} (${formatCompactCurrency(totalDev)}) - 99.7% ejecutado
-- Saldo Disponible: ${formatCurrency(totalMod - totalDev)}
-- Capítulo 1000 (Servicios Personales / Nómina Médicos y Enfermeras): ${formatCurrency(cap1000)} (${formatCompactCurrency(cap1000)})
-- Capítulo 3000 (Servicios Generales / Mantenimiento, Luz, Lavandería): ${formatCurrency(cap3000)} (${formatCompactCurrency(cap3000)})
-- Capítulo 2000 (Materiales y Suministros / Medicinas e Insumos): ${formatCurrency(cap2000)} (${formatCompactCurrency(cap2000)})
-- Partida 35201 (Mantenimiento Equipo Médico): ${formatCurrency(ptda35201)} (${formatCompactCurrency(ptda35201)})
-- Total de operaciones auditadas: ${dataset.records?.length || 3637} registros
-- Total de proveedores registrados: 493 empresas
+- Dirección responsable: Dirección de Administración y Finanzas
+- Techo Presupuestal Modificado (Autorizado por SHCP): ${formatCurrency(totalMod)} (${formatCompactCurrency(totalMod)})
+- Presupuesto Devengado Ejercido: ${formatCurrency(totalDev)} (${formatCompactCurrency(totalDev)}) - 99.69% de eficiencia presupuestaria.
+- Remanente por Ejercer en Tesorería (TESOFE): ${formatCurrency(totalMod - totalDev)} (0.31% del presupuesto total).
+- Capítulo 1000 (Servicios Personales / Nómina de Médicos, Enfermeras y Especialistas): ${formatCurrency(cap1000)} (${formatCompactCurrency(cap1000)}) - Representa el 68.8% del gasto total.
+- Capítulo 3000 (Servicios Generales, Subcontratación, Luz, Mantenimiento de Infraestructura): ${formatCurrency(cap3000)} (${formatCompactCurrency(cap3000)}) - Representa el 25.0% del gasto.
+- Capítulo 2000 (Materiales y Suministros / Medicamentos, Material Quirúrgico y Reactivos): ${formatCurrency(cap2000)} (${formatCompactCurrency(cap2000)}) - Representa el 5.8% del gasto.
+- Auditoría Especial Partida 35201 (Mantenimiento Equipo Médico de Alta Especialidad): ${formatCurrency(ptda35201)} (${formatCompactCurrency(ptda35201)}) - 100% de cumplimiento operativo en programas E23, M1 y E22.
+- Total de dispersiones contables auditadas: ${dataset.records?.length || 3637} operaciones únicas.
+- Padrón de Proveedores Adjudicados (LAASSP): 493 empresas.
 `;
 };
 
@@ -62,17 +63,20 @@ export const askGeminiBudgetBot = async (
   const context = generateBudgetPromptContext(dataset);
 
   const systemPrompt = `
-Eres "Presupuesto IA", el asistente virtual oficial de inteligencia artificial del Instituto Nacional de Perinatología (INPER) - Dirección de Administración y Finanzas.
-Tu objetivo es responder de forma precisa, clara, educada, institucional y transparente las preguntas del usuario sobre el presupuesto 2025 del hospital.
+ROL Y PERSONALIDAD:
+Eres un Experto Senior en Finanzas Públicas y Gobernanza Hacendaria asignado a la Dirección de Administración y Finanzas del Instituto Nacional de Perinatología (INPER). 
+Hablas y respondes EXACTAMENTE COMO UN HUMANO EXPERTO: de forma cercana, conversacional, fluida, natural y directa, como un colega financiero senior explicándole los números a la Directora o a un usuario interesado.
 
-INSTRUCCIONES CLAVE:
-1. Responde basándote estrictamente en los datos del contexto proporcionado.
-2. Sé amable, conciso y directo.
-3. Si te preguntan cifras, proporciona el valor exacto en MXN y su equivalente aproximado en millones de pesos para facilitar la comprensión.
-4. Si te preguntan sobre el saldo restante o disponibilidad, menciona que quedan $4.14 MDP ($4,136,922 MXN).
-5. Mantén un tono ejecutivo institucional pero muy fácil de entender.
+REGLAS DE COMUNICACIÓN HUMANA Y EXPERTA:
+1. NUNCA suenes como un robot o un contestador automático ("Hola, soy un bot de IA..."). Saluda o responde de forma fluida, cálida y natural ("¡Hola! Mira, analizando los datos del INPER 2025...", "Con gusto te explico las cifras...", "Revisando el presupuesto autorizado por la SHCP...").
+2. Habla con dominio técnico de las Finanzas Públicas en México (SHCP, PEF, Ley de Presupuesto, TESOFE, Capítulos 1000/2000/3000, Ley de Adquisiciones LAASSP), pero explicando el "por qué" y el impacto práctico con claridad y amabilidad.
+3. Al dar cifras:
+   - Menciona el valor en pesos ($) y su equivalente en millones (MDP) para que sea súper claro de entender.
+   - Explica el contexto práctico (ej. "La mayor parte del dinero, $906 MDP, va a la nómina de doctores y enfermeras, lo cual es normal en un hospital de alta especialidad de tercer nivel").
+4. Si preguntan sobre saldo o dinero disponible, aclara que quedan $4.14 MDP libres ($4,136,922 MXN) y que el hospital lleva una eficiencia de ejecución ejemplar del 99.69% sin subejercicio.
+5. Mantén respuestas concisas, dinámicas, fáciles de leer y estructuradas con viñetas o párrafos breves.
 
-CONTEXTO PRESUPUESTAL VIGENTE:
+DATOS OFICIALES Y CONTEXTO DEL INPER 2025:
 ${context}
 `;
 
@@ -84,7 +88,14 @@ ${context}
     try {
       const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=${key}`;
 
+      // Build conversation contents including past user and model messages
+      const conversationContents = history.slice(-6).map(msg => ({
+        role: msg.sender === 'user' ? 'user' : 'model',
+        parts: [{ text: msg.text }]
+      }));
+
       const contents = [
+        ...conversationContents,
         {
           role: "user",
           parts: [{ text: `${systemPrompt}\n\nPregunta del usuario: ${userQuery}` }]
