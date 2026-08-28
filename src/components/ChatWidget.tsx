@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { X, Send, Plus, ChevronDown, Sparkles, User } from 'lucide-react';
+import { X, Send, Plus, ChevronDown, Sparkles, User, RotateCcw } from 'lucide-react';
 import { BudgetDataset } from '../types/budget';
 import { streamGeminiBudgetBot } from '../services/geminiChatService';
 
@@ -29,6 +29,13 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ dataset }) => {
   const scrollToBottom = useCallback(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
   }, []);
+
+  const resetChat = () => {
+    setMessages([]);
+    setIsTyping(false);
+    setInputMessage('');
+    setTimeout(() => inputRef.current?.focus(), 50);
+  };
 
   useEffect(() => {
     if (isOpen && messages.length > 0) scrollToBottom();
@@ -99,7 +106,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ dataset }) => {
         <div className="w-full h-full sm:w-[420px] sm:h-[580px] max-h-[100vh] sm:max-h-[85vh] bg-gradient-to-b from-white via-white to-blue-50/60 dark:from-slate-900 dark:via-slate-900 dark:to-slate-950 rounded-none sm:rounded-[36px] border-0 sm:border border-slate-200/90 dark:border-slate-800 shadow-2xl overflow-hidden flex flex-col sm:mb-4 animate-fadeIn">
 
           {/* Header */}
-          <div className="p-4 sm:p-5 flex items-center justify-between border-b border-slate-100 dark:border-slate-800/80 bg-white/90 dark:bg-slate-900/90 backdrop-blur-md sticky top-0 z-10">
+          <div className="p-4 sm:p-5 flex items-center justify-between bg-white/90 dark:bg-slate-900/90 backdrop-blur-md sticky top-0 z-10">
             <div className="flex items-center space-x-3">
               <button
                 onClick={() => setIsOpen(false)}
@@ -119,9 +126,13 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ dataset }) => {
                 </div>
               </div>
             </div>
-            <div className="text-[10px] font-mono text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 px-2.5 py-1 rounded-full border border-amber-200 dark:border-amber-700/50 font-bold">
-              Key #{activeKeyNum}/{(import.meta as any).env?.VITE_GEMINI_API_KEYS?.split(',').filter(Boolean).length || 1} 🔄
-            </div>
+            <button
+              onClick={resetChat}
+              className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-full transition-colors text-slate-500 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200"
+              title="Reiniciar conversación"
+            >
+              <RotateCcw className="w-4 h-4" />
+            </button>
           </div>
 
           {/* Messages */}
@@ -141,23 +152,36 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ dataset }) => {
               </div>
             )}
 
-            {messages.map((msg) => (
-              <div
-                key={msg.id}
-                className={`flex items-start ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
-              >
-                <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-xs leading-relaxed ${
-                  msg.sender === 'user'
-                    ? 'bg-[#f0f4f9] dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-xs rounded-br-none font-medium'
-                    : 'bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-200/80 dark:border-slate-800 shadow-xs rounded-bl-none font-sans whitespace-pre-wrap'
-                }`}>
-                  {msg.text.replace(/\*/g, '') || (msg.streaming ? <span className="inline-block w-2 h-3 bg-slate-400 animate-pulse rounded-sm align-middle" /> : '')}
-                  {msg.streaming && msg.text && (
-                    <span className="inline-block w-1.5 h-3 bg-slate-400 animate-pulse rounded-sm align-middle ml-0.5" />
-                  )}
+            {messages.map((msg) => {
+              if (msg.sender === 'user') {
+                return (
+                  <div key={msg.id} className="flex justify-end my-1">
+                    <div className="bg-[#f0f4f9] dark:bg-slate-800 text-slate-900 dark:text-slate-100 px-4 py-2.5 rounded-2xl max-w-[85%] text-xs font-medium shadow-xs">
+                      {msg.text}
+                    </div>
+                  </div>
+                );
+              }
+
+              return (
+                <div key={msg.id} className="my-2 w-full">
+                  <div className="w-full text-slate-800 dark:text-slate-100 text-xs sm:text-sm leading-relaxed font-sans whitespace-pre-wrap">
+                    {msg.text.replace(/\*/g, '') || (
+                      msg.streaming ? (
+                        <div className="flex items-center gap-1.5 py-2">
+                          <span className="w-2 h-2 rounded-full bg-slate-400 dark:bg-slate-500 animate-bounce" style={{ animationDelay: '0ms' }} />
+                          <span className="w-2 h-2 rounded-full bg-slate-400 dark:bg-slate-500 animate-bounce" style={{ animationDelay: '150ms' }} />
+                          <span className="w-2 h-2 rounded-full bg-slate-400 dark:bg-slate-500 animate-bounce" style={{ animationDelay: '300ms' }} />
+                        </div>
+                      ) : ''
+                    )}
+                    {msg.streaming && msg.text && (
+                      <span className="inline-block w-1.5 h-3 bg-[#3C0C1F] dark:bg-rose-400 animate-pulse rounded-sm align-middle ml-1" />
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             <div ref={messagesEndRef} />
           </div>
