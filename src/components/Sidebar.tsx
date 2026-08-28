@@ -1,14 +1,15 @@
 import React, { useState } from 'react';
-import { 
-  BarChart3, 
-  Table, 
-  Users, 
-  FolderTree, 
-  Sun, 
+import {
+  BarChart3,
+  Table,
+  Users,
+  FolderTree,
+  Sun,
   Moon,
   Menu,
   X,
-  FileText
+  FileText,
+  RefreshCw
 } from 'lucide-react';
 import { BudgetMetadata } from '../types/budget';
 
@@ -35,6 +36,7 @@ export const Sidebar: React.FC<SidebarProps> = ({
     { id: 'table', label: 'Operaciones', icon: Table },
     { id: 'proveedores', label: 'Proveedores', icon: Users },
     { id: 'partidas', label: 'Partidas', icon: FolderTree },
+    { id: 'sync', label: 'Sincronizar Sheets', icon: RefreshCw },
   ];
 
   const handleTabClick = (tabId: string) => {

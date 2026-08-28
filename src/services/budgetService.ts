@@ -1,4 +1,4 @@
-import { BudgetItem, KPIStats, MonthlyBreakdown, PartidaBreakdown, ProveedorBreakdown, CuentaBreakdown, BudgetDataset } from '../types/budget';
+import { BudgetItem, KPIStats, MonthlyBreakdown, PartidaGroup, ProveedorGroup, CuentaGroup, BudgetDataset } from '../types/budget';
 
 export const fetchBudgetData = async (): Promise<BudgetDataset> => {
   const response = await fetch('/budget_data.json');
@@ -103,7 +103,7 @@ export const computeMonthlyBreakdown = (items: BudgetItem[]): MonthlyBreakdown[]
   });
 
   return Array.from(monthMap.entries()).map(([m, data]) => ({
-    month: m,
+    monthNum: m,
     monthName: monthNames[m - 1],
     cap3000: data.cap3000,
     cap2000: data.cap2000,
@@ -112,8 +112,8 @@ export const computeMonthlyBreakdown = (items: BudgetItem[]): MonthlyBreakdown[]
   }));
 };
 
-export const computeTopPartidas = (items: BudgetItem[], limit: number = 10): PartidaBreakdown[] => {
-  const map = new Map<string, { desc: string; cap: string; totalParcial: number; count: number }>();
+export const computeTopPartidas = (items: BudgetItem[], limit: number = 10): PartidaGroup[] => {
+  const map = new Map<string, { desc: string; cap: string; totalParcial: number; totalTotal: number; count: number }>();
 
   items.forEach(item => {
     const code = item.ptda_code || 'SIN_PARTIDA';
@@ -121,11 +121,12 @@ export const computeTopPartidas = (items: BudgetItem[], limit: number = 10): Par
     const cap = item.capitulo_code || 'N/A';
 
     if (!map.has(code)) {
-      map.set(code, { desc, cap, totalParcial: 0, count: 0 });
+      map.set(code, { desc, cap, totalParcial: 0, totalTotal: 0, count: 0 });
     }
 
     const curr = map.get(code)!;
     curr.totalParcial += item.importe_parcial;
+    curr.totalTotal += item.importe_total;
     curr.count += 1;
   });
 
@@ -134,13 +135,14 @@ export const computeTopPartidas = (items: BudgetItem[], limit: number = 10): Par
     desc: val.desc,
     capitulo: val.cap,
     totalParcial: val.totalParcial,
+    totalTotal: val.totalTotal,
     count: val.count
   })).sort((a, b) => b.totalParcial - a.totalParcial);
 
   return sorted.slice(0, limit);
 };
 
-export const computeTopProveedores = (items: BudgetItem[], limit: number = 10): ProveedorBreakdown[] => {
+export const computeTopProveedores = (items: BudgetItem[], limit: number = 10): ProveedorGroup[] => {
   const map = new Map<string, { totalParcial: number; count: number; conceptos: Map<string, number> }>();
 
   items.forEach(item => {
@@ -175,11 +177,11 @@ export const computeTopProveedores = (items: BudgetItem[], limit: number = 10): 
   }).sort((a, b) => b.totalParcial - a.totalParcial).slice(0, limit);
 };
 
-export const computeCuentasBreakdown = (items: BudgetItem[]): CuentaBreakdown[] => {
+export const computeCuentasBreakdown = (items: BudgetItem[]): CuentaGroup[] => {
   const map = new Map<string, { total: number; count: number }>();
 
   items.forEach(item => {
-    const account = item.banco_cuenta || 'No Especificada';
+    const account = item.cuenta_bancaria || 'No Especificada';
     if (!map.has(account)) {
       map.set(account, { total: 0, count: 0 });
     }
@@ -188,8 +190,8 @@ export const computeCuentasBreakdown = (items: BudgetItem[]): CuentaBreakdown[] 
     curr.count += 1;
   });
 
-  return Array.from(map.entries()).map(([account, val]) => ({
-    account,
+  return Array.from(map.entries()).map(([name, val]) => ({
+    name,
     total: val.total,
     count: val.count
   })).sort((a, b) => b.total - a.total);

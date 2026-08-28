@@ -2,9 +2,9 @@ import { BudgetDataset } from '../types/budget';
 import { formatCurrency, formatCompactCurrency } from './budgetService';
 
 // Array of Gemini API keys loaded safely from environment variables (.env ignored by git)
-const envKeysRaw = import.meta.env.VITE_GEMINI_API_KEYS || '';
+const envKeysRaw = (import.meta as any).env?.VITE_GEMINI_API_KEYS || '';
 const API_KEYS = envKeysRaw
-  ? envKeysRaw.split(',').map(k => k.trim()).filter(Boolean)
+  ? envKeysRaw.split(',').map((k: string) => k.trim()).filter(Boolean)
   : [
       'DEMO_KEY_1',
       'DEMO_KEY_2',

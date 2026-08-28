@@ -8,6 +8,7 @@ import { DataTable } from './components/DataTable';
 import { ProveedoresView } from './components/ProveedoresView';
 import { PartidasView } from './components/PartidasView';
 import { DetailModal } from './components/DetailModal';
+import { SyncView } from './components/SyncView';
 import { ChatWidget } from './components/ChatWidget';
 import { BudgetItem, BudgetDataset } from './types/budget';
 import { fetchBudgetData, computeKPIs, formatCurrency } from './services/budgetService';
@@ -20,6 +21,8 @@ export function App() {
   const [selectedItem, setSelectedItem] = useState<BudgetItem | null>(null);
   const [darkMode, setDarkMode] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState(false);
+  const [syncLogs, setSyncLogs] = useState<string[]>([]);
 
   // Sync dark class on html root element
   useEffect(() => {
@@ -49,6 +52,53 @@ export function App() {
     }
   };
 
+  const handleSync = () => {
+    if (isSyncing) return;
+    setIsSyncing(true);
+    setSyncLogs(['Conectando con Google Sheets...']);
+
+    const es = new EventSource('/api/sync');
+
+    // EventSource only supports GET; use fetch for POST + ReadableStream instead
+    es.close();
+
+    fetch('/api/sync', { method: 'POST' }).then(res => {
+      if (!res.body) return;
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+
+      const pump = (): Promise<void> => reader.read().then(({ done, value }) => {
+        if (done) return;
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split('\n\n');
+        buffer = parts.pop() || '';
+        parts.forEach(part => {
+          const line = part.replace(/^data: /, '').trim();
+          if (!line) return;
+          try {
+            const parsed = JSON.parse(line);
+            if (parsed.msg) setSyncLogs(prev => [...prev, parsed.msg]);
+            if (parsed.done) {
+              setIsSyncing(false);
+              if (parsed.success) {
+                setTimeout(() => loadData(), 500);
+              }
+            }
+          } catch {
+            if (line) setSyncLogs(prev => [...prev, line]);
+          }
+        });
+        return pump();
+      });
+
+      pump().catch(() => setIsSyncing(false));
+    }).catch(err => {
+      setSyncLogs(prev => [...prev, `Error de conexión: ${err.message}`]);
+      setIsSyncing(false);
+    });
+  };
+
   const kpis = computeKPIs(dataset?.records || []);
   const totalPresupuestoTecho = dataset?.ac01_summary?.total?.mod || 1317064845;
 
@@ -63,7 +113,11 @@ export function App() {
     ac01_records: [],
     records: [],
     metadata: {
+      title: "Presupuesto INPER 2025",
+      generated_at: "",
       total_records: 3637,
+      total_ac01_records: 389,
+      sheets: [],
       service_account: "visualizador@presupuesto-506721.iam.gserviceaccount.com"
     }
   };
@@ -144,7 +198,7 @@ export function App() {
               totalOperaciones={activeDataset.records?.length || 3637}
             />
             <KPICards kpis={kpis} totalRecords={activeDataset.records?.length || 0} />
-            <DashboardView items={activeDataset.records || []} kpis={kpis} />
+            <DashboardView items={activeDataset.records || []} kpis={kpis} ac01Summary={activeDataset.ac01_summary} ac01Records={activeDataset.ac01_records || []} />
           </div>
         )}
 
@@ -173,11 +227,21 @@ export function App() {
 
         {/* Tab 5: Partidas Presupuestales View */}
         {activeTab === 'partidas' && (
-          <PartidasView 
-            items={activeDataset.records || []} 
+          <PartidasView
+            items={activeDataset.records || []}
             onSelectPartida={() => {
               setActiveTab('table');
-            }} 
+            }}
+          />
+        )}
+
+        {/* Tab 6: Sincronización Google Sheets */}
+        {activeTab === 'sync' && (
+          <SyncView
+            metadata={activeDataset.metadata}
+            isSyncing={isSyncing}
+            syncLogs={syncLogs}
+            onRefresh={handleSync}
           />
         )}
 

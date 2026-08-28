@@ -23,7 +23,7 @@ import {
   ZAxis,
   Treemap
 } from 'recharts';
-import { BudgetItem, KPIStats } from '../types/budget';
+import { BudgetItem, KPIStats, AC01Summary, AC01Record } from '../types/budget';
 import { 
   computeMonthlyBreakdown, 
   computeTopPartidas, 
@@ -52,9 +52,11 @@ import {
 interface DashboardViewProps {
   items: BudgetItem[];
   kpis: KPIStats;
+  ac01Summary?: AC01Summary;
+  ac01Records?: AC01Record[];
 }
 
-export const DashboardView: React.FC<DashboardViewProps> = ({ items, kpis }) => {
+export const DashboardView: React.FC<DashboardViewProps> = ({ items, kpis, ac01Summary, ac01Records = [] }) => {
   const [chartFilter, setChartFilter] = useState<'todas' | 'comparacion' | 'tiempo' | 'proporcion' | 'relaciones' | 'jerarquias'>('todas');
 
   const monthlyData = computeMonthlyBreakdown(items);
@@ -62,77 +64,90 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ items, kpis }) => 
   const topProveedores = computeTopProveedores(items, 10);
   const cuentasData = computeCuentasBreakdown(items);
 
-  // 1. Dona / Proporciones de Capítulo
+  // 1. Dona / Proporciones de Capítulo — uses AC01 devengado oficial for all 3 caps (consistent source)
+  const cap1000Dev = ac01Summary?.["1000"]?.dev ?? 906482936;
+  const cap2000Dev = ac01Summary?.["2000"]?.dev ?? 76595744;
+  const cap3000Dev = ac01Summary?.["3000"]?.dev ?? 329849243;
   const chapterPieData = [
-    { name: 'Capítulo 1000 (Servicios Personales / Nómina)', value: 906482936, color: '#3C0C1F' },
-    { name: 'Capítulo 3000 (Servicios Generales e Infraestructura)', value: kpis.cap3000Parcial, color: '#2563EB' },
-    { name: 'Capítulo 2000 (Materiales y Suministros Médicos)', value: kpis.cap2000Parcial, color: '#059669' }
+    { name: 'Capítulo 1000 (Servicios Personales / Nómina)', value: cap1000Dev, color: '#3C0C1F' },
+    { name: 'Capítulo 3000 (Servicios Generales e Infraestructura)', value: cap3000Dev, color: '#2563EB' },
+    { name: 'Capítulo 2000 (Materiales y Suministros Médicos)', value: cap2000Dev, color: '#059669' }
   ];
 
-  // 2. Comparativo 2024 vs 2025
-  const cap2024vs2025 = [
-    { cap: 'Cap 1000 (Personal)', y2024: 855934344, y2025: 906482936 },
-    { cap: 'Cap 2000 (Insumos)', y2024: 164480532, y2025: 76595744 },
-    { cap: 'Cap 3000 (Servicios)', y2024: 400856497, y2025: 329849243 },
-  ];
+  // 2. Original vs Modificado vs Devengado por Capítulo (desde AC01)
+  const capComparativoData = ['1000', '2000', '3000'].map(c => ({
+    cap: `Cap ${c}`,
+    Original: ac01Summary?.[c]?.orig ?? 0,
+    Modificado: ac01Summary?.[c]?.mod ?? 0,
+    Devengado: ac01Summary?.[c]?.dev ?? 0,
+  })).filter(d => d.Modificado > 0);
 
-  // 3. Auditoría Partida 35201
-  const partida35201Chart = [
-    { name: 'Act 18 (Prog E23)', mod: 885859, dev: 885859 },
-    { name: 'Act 2 (Prog M1)', mod: 147292, dev: 147292 },
-    { name: 'Act 24 (Prog E22)', mod: 716783, dev: 716783 },
-    { name: 'Fte Financiera 4', mod: 52000, dev: 7150 },
-  ];
+  // 3. Partida 35201 desde AC01 records reales
+  const partida35201Records = ac01Records.filter(r => r.ptda_code === '35201');
+  const partida35201Chart = partida35201Records.length > 0
+    ? partida35201Records.map((r, i) => ({
+        name: r.pp || `Registro ${i + 1}`,
+        mod: r.monto_modificado,
+        dev: r.monto_devengado,
+      }))
+    : [];
 
-  // 4. Radar Chart: Desempeño Multivariable
+  // 4. Radar Chart: valores derivados del AC01
+  const totalMod = ac01Summary?.total?.mod ?? 1;
+  const totalDev = ac01Summary?.total?.dev ?? 0;
+  const eficiencia = totalMod > 0 ? (totalDev / totalMod) * 100 : 0;
+  const cap1000Pct = totalDev > 0 ? ((ac01Summary?.["1000"]?.dev ?? 0) / totalDev) * 100 : 0;
+  const cap3000Ej = (ac01Summary?.["3000"]?.mod ?? 0) > 0
+    ? ((ac01Summary?.["3000"]?.dev ?? 0) / (ac01Summary?.["3000"]?.mod ?? 1)) * 100 : 0;
+  const cap2000Ej = (ac01Summary?.["2000"]?.mod ?? 0) > 0
+    ? ((ac01Summary?.["2000"]?.dev ?? 0) / (ac01Summary?.["2000"]?.mod ?? 1)) * 100 : 0;
+  const ptda35201Ej = partida35201Records.length > 0
+    ? (partida35201Records.reduce((s, r) => s + r.monto_devengado, 0) /
+       Math.max(partida35201Records.reduce((s, r) => s + r.monto_modificado, 0), 1)) * 100
+    : 0;
   const radarData = [
-    { subject: 'Eficiencia Ejercicio', A: 99.7, fullMark: 100 },
-    { subject: 'Rigidez Nómina (Cap 1000)', A: 68.8, fullMark: 100 },
-    { subject: 'Capítulo 3000 (Servicios)', A: 80.6, fullMark: 100 },
-    { subject: 'Capítulo 2000 (Medicinas)', A: 46.5, fullMark: 100 },
-    { subject: 'Cumplimiento 35201', A: 100.0, fullMark: 100 },
-    { subject: 'Auditoría Padrón', A: 98.2, fullMark: 100 },
+    { subject: 'Eficiencia Ejercicio', A: Math.min(eficiencia, 100), fullMark: 100 },
+    { subject: 'Peso Nómina (Cap 1000)', A: Math.min(cap1000Pct, 100), fullMark: 100 },
+    { subject: 'Ejercicio Cap 3000', A: Math.min(cap3000Ej, 100), fullMark: 100 },
+    { subject: 'Ejercicio Cap 2000', A: Math.min(cap2000Ej, 100), fullMark: 100 },
+    { subject: 'Cumplimiento 35201', A: Math.min(ptda35201Ej, 100), fullMark: 100 },
+    { subject: 'Cobertura Proveedores', A: Math.min(kpis.totalProveedores / 5, 100), fullMark: 100 },
   ];
 
-  // 5. Barras Apiladas: Composición por Fuente de Financiamiento
-  const stackedFinancingData = [
-    { cap: 'Cap 1000', RecursosFiscales: 906482936, IngresosPropios: 0 },
-    { cap: 'Cap 2000', RecursosFiscales: 53617020, IngresosPropios: 22978724 },
-    { cap: 'Cap 3000', RecursosFiscales: 263879394, IngresosPropios: 65969849 },
+  // 5. Top partidas por capítulo (desde records reales)
+  const top5_3000 = topPartidas.filter(p => p.capitulo === '3000').slice(0, 5);
+  const top5_2000 = topPartidas.filter(p => p.capitulo === '2000').slice(0, 5);
+  const partidaCompData = [
+    ...top5_3000.map(p => ({ label: p.code, cap3000: p.totalParcial, cap2000: 0 })),
+    ...top5_2000.map(p => ({ label: p.code, cap3000: 0, cap2000: p.totalParcial })),
   ];
 
-  // 6. Scatter / Dispersión: Transacciones de Alto Valor (Valores Extremos / Anomalias)
-  const scatterData = items.slice(0, 30).map((item, idx) => ({
-    x: idx + 1,
-    y: item.importe_parcial,
-    z: item.importe_parcial > 5000000 ? 300 : 100,
-    name: item.proveedor || item.concepto || `Operación #${idx+1}`
-  }));
+  // 6. Scatter: todas las transacciones > umbral ordenadas por monto
+  const scatterData = [...items]
+    .sort((a, b) => b.importe_parcial - a.importe_parcial)
+    .slice(0, 50)
+    .map((item, idx) => ({
+      x: idx + 1,
+      y: item.importe_parcial,
+      z: item.importe_parcial > 5000000 ? 300 : 100,
+      name: item.proveedor || item.concepto || `Op #${idx + 1}`
+    }));
 
-  // 7. Treemap Data: Jerarquía Presupuestal
+  // 7. Treemap: top partidas por cap como bloques reales
   const treemapData = [
     {
-      name: 'Capítulo 1000',
-      children: [
-        { name: 'Nómina Médicos y Enfermeras', size: 906482936 }
-      ]
+      name: 'Capítulo 1000 (Nómina)',
+      children: [{ name: 'Servicios Personales', size: ac01Summary?.["1000"]?.dev ?? 0 }]
     },
     {
       name: 'Capítulo 3000',
-      children: [
-        { name: 'Mantenimiento Electromedicina', size: 140000000 },
-        { name: 'Servicios Integrales y Subcontratación', size: 100000000 },
-        { name: 'Servicios de Limpieza y Seguridad', size: 89849243 }
-      ]
+      children: top5_3000.slice(0, 4).map(p => ({ name: p.desc || p.code, size: p.totalParcial }))
     },
     {
       name: 'Capítulo 2000',
-      children: [
-        { name: 'Medicamentos y Reactivos', size: 45000000 },
-        { name: 'Material Curativo e Quirúrgico', size: 31595744 }
-      ]
+      children: top5_2000.slice(0, 4).map(p => ({ name: p.desc || p.code, size: p.totalParcial }))
     }
-  ];
+  ].filter(g => g.children.some(c => c.size > 0));
 
   const customTooltipStyle = {
     backgroundColor: '#ffffff',
@@ -417,67 +432,68 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ items, kpis }) => 
       {(chartFilter === 'todas' || chartFilter === 'comparacion' || chartFilter === 'jerarquias') && (
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fadeIn">
           
-          {/* GRÁFICA 4: Columnas Agrupadas (Comparativo 2024 vs 2025) */}
+          {/* GRÁFICA 4: Original vs Modificado vs Devengado (desde AC01 real) */}
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
             <div>
               <div className="flex items-center space-x-2">
                 <span className="text-[10px] font-black uppercase tracking-wider text-emerald-600 dark:text-emerald-400 bg-emerald-50 dark:bg-emerald-900/30 px-2 py-0.5 rounded-full border border-emerald-200 dark:border-emerald-800">
-                  Columnas Agrupadas (Comparativo Anual)
+                  Columnas Agrupadas (AC01 Oficial)
                 </span>
               </div>
               <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2 mt-1">
                 <Layers className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
-                Gráfica 4: Comparativo Cuenta Pública 2024 vs 2025
+                Gráfica 4: Original vs Modificado vs Devengado por Capítulo
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Variación interanual por capítulo de gasto</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Techo presupuestal autorizado SHCP vs ejercicio real (Cuenta Pública AC01 2025)</p>
             </div>
 
             <div className="h-64 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={cap2024vs2025} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                <BarChart data={capComparativoData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
                   <XAxis dataKey="cap" stroke="#64748b" fontSize={11} tickLine={false} />
                   <YAxis stroke="#64748b" fontSize={11} tickLine={false} tickFormatter={(v) => `$${(v / 1000000).toFixed(0)}M`} />
-                  <Tooltip 
+                  <Tooltip
                     formatter={(val: any) => [formatCurrency(Number(val)), '']}
                     contentStyle={customTooltipStyle}
                   />
                   <Legend />
-                  <Bar dataKey="y2024" name="Cuenta Pública 2024" fill="#94a3b8" radius={[6, 6, 0, 0]} />
-                  <Bar dataKey="y2025" name="Cuenta Pública 2025" fill="#10b981" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="Original" name="Presupuesto Original" fill="#94a3b8" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="Modificado" name="Presupuesto Modificado (SHCP)" fill="#f59e0b" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="Devengado" name="Devengado Ejercido" fill="#10b981" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
           </div>
 
-          {/* GRÁFICA 5: Barras Apiladas (Comparar Composición de Fuentes de Financiamiento) */}
+          {/* GRÁFICA 5: Top Partidas Cap 3000 vs Cap 2000 (desde registros reales) */}
           <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 sm:p-8 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-4">
             <div>
               <div className="flex items-center space-x-2">
                 <span className="text-[10px] font-black uppercase tracking-wider text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/30 px-2 py-0.5 rounded-full border border-amber-200 dark:border-amber-800">
-                  Barras Apiladas (Composición de Fuentes)
+                  Comparativo por Partida (Registros Reales)
                 </span>
               </div>
               <h3 className="text-lg font-black text-slate-900 dark:text-white flex items-center gap-2 mt-1">
                 <Sliders className="w-5 h-5 text-amber-600 dark:text-amber-400" />
-                Gráfica 5: Composición por Fuente de Financiamiento
+                Gráfica 5: Top Partidas Cap 3000 vs Cap 2000
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Recursos Fiscales vs Ingresos Propios por Capítulo</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Importe dispersado por partida específica (desde dispersiones operativas del sheet)</p>
             </div>
 
             <div className="h-64 w-full">
               <ResponsiveContainer width="100%" height="100%">
-                <BarChart data={stackedFinancingData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
+                <BarChart data={partidaCompData} margin={{ top: 10, right: 10, left: 10, bottom: 0 }}>
                   <CartesianGrid strokeDasharray="3 3" stroke="#f1f5f9" vertical={false} />
-                  <XAxis dataKey="cap" stroke="#64748b" fontSize={11} tickLine={false} />
+                  <XAxis dataKey="label" stroke="#64748b" fontSize={10} tickLine={false} />
                   <YAxis stroke="#64748b" fontSize={11} tickLine={false} tickFormatter={(v) => `$${(v / 1000000).toFixed(0)}M`} />
-                  <Tooltip 
+                  <Tooltip
                     formatter={(val: any) => [formatCurrency(Number(val)), '']}
                     contentStyle={customTooltipStyle}
                   />
                   <Legend />
-                  <Bar dataKey="RecursosFiscales" name="Recursos Fiscales (TESOFE)" stackId="a" fill="#3C0C1F" radius={[0, 0, 0, 0]} />
-                  <Bar dataKey="IngresosPropios" name="Ingresos Propios Institucionales" stackId="a" fill="#0284c7" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="cap3000" name="Cap 3000 (Servicios)" fill="#2563eb" radius={[6, 6, 0, 0]} />
+                  <Bar dataKey="cap2000" name="Cap 2000 (Insumos)" fill="#059669" radius={[6, 6, 0, 0]} />
                 </BarChart>
               </ResponsiveContainer>
             </div>
@@ -705,7 +721,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ items, kpis }) => 
                 <div key={i} className="flex items-center justify-between text-xs">
                   <span className="flex items-center gap-2 font-medium text-slate-700 dark:text-slate-300">
                     <span className="w-3 h-3 rounded-full" style={{ backgroundColor: ['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b'][i % 4] }}></span>
-                    Cuenta: {c.account}
+                    Cuenta: {c.name}
                   </span>
                   <span className="font-extrabold text-slate-900 dark:text-white font-mono">
                     {formatCompactCurrency(c.total)} ({c.count} operaciones)

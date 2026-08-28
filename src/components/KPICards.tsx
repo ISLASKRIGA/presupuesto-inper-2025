@@ -19,8 +19,8 @@ export const KPICards: React.FC<KPICardsProps> = ({ kpis, totalRecords }) => {
       <div className="bg-white dark:bg-slate-900 rounded-2xl p-5 border border-slate-200 dark:border-slate-800 shadow-sm hover:shadow-md transition-all">
         <div className="flex items-center justify-between mb-3">
           <div>
-            <span className="text-[11px] font-extrabold uppercase tracking-wider text-blue-700 dark:text-blue-400">Erogaciones Ejercidas</span>
-            <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Acumulado Importe Parcial</p>
+            <span className="text-[11px] font-extrabold uppercase tracking-wider text-blue-700 dark:text-blue-400">Dispersiones Operativas</span>
+            <p className="text-[10px] text-slate-500 dark:text-slate-400 font-medium">Cap 2000 + 3000 (Pólizas)</p>
           </div>
           <div className="w-9 h-9 rounded-xl bg-blue-50 dark:bg-blue-500/20 text-blue-700 dark:text-blue-400 flex items-center justify-center border border-blue-100 dark:border-blue-500/30">
             <DollarSign className="w-4 h-4" />

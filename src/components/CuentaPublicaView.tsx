@@ -30,20 +30,20 @@ export const CuentaPublicaView: React.FC<CuentaPublicaViewProps> = ({ dataset })
     "total": { orig: 1212634351, mod: 1317064845, dev: 1312927923 }
   };
 
-  const capComparison = [
-    { cap: "1000", desc: "Servicios Personales (Nómina de Doctores y Personal)", y2024: 855934344, y2025: 906482936, diff: 50548592 },
-    { cap: "2000", desc: "Materiales y Suministros (Medicinas e Insumos Médicos)", y2024: 164480532, y2025: 76595744, diff: -87884788 },
-    { cap: "3000", desc: "Servicios Generales (Mantenimiento, Luz, Agua, Seguridad)", y2024: 400856497, y2025: 329849243, diff: -71007254 },
-  ];
+  // 2024 comparison removed — no 2024 sheet data available
+  // Partida 35201 derived dynamically from AC01 records
+  const partida35201Data = ac01Records.filter(r => r.ptda_code === '35201').map(r => ({
+    conc: `${r.pp ? r.pp + ' — ' : ''}${r.ptda_desc || 'Mantenimiento equipo médico'}`,
+    orig: r.monto_original,
+    mod: r.monto_modificado,
+    dev: r.monto_devengado,
+    pagado: r.monto_devengado
+  }));
 
-  const partida35201Data = [
-    { conc: "Mantenimiento equipo médico (Act 18 - Prog E23)", orig: 408282, mod: 885859, dev: 885859, pagado: 885859 },
-    { conc: "Mantenimiento equipo médico (Act 2 - Prog M1)", orig: 0, mod: 147292, dev: 147292, pagado: 147292 },
-    { conc: "Mantenimiento equipo médico (Act 24 - Prog E22)", orig: 398913, mod: 716783, dev: 716783, pagado: 716783 },
-    { conc: "Mantenimiento equipo médico (Fte Financiamiento 4)", orig: 52000, mod: 52000, dev: 7150, pagado: 7150 },
-  ];
-
-  const total35201 = { orig: 911195, mod: 1801934, dev: 1757084, pagado: 1757084 };
+  const total35201 = partida35201Data.reduce(
+    (acc, r) => ({ orig: acc.orig + r.orig, mod: acc.mod + r.mod, dev: acc.dev + r.dev, pagado: acc.pagado + r.pagado }),
+    { orig: 0, mod: 0, dev: 0, pagado: 0 }
+  );
 
   const filteredAC01 = useMemo(() => {
     return ac01Records.filter(item => {
@@ -139,7 +139,7 @@ export const CuentaPublicaView: React.FC<CuentaPublicaViewProps> = ({ dataset })
                 : 'text-slate-600 dark:text-slate-400 hover:text-slate-900'
             }`}
           >
-            Base AC01 (390 Renglones)
+            Base AC01 ({dataset.ac01_records?.length ?? 389} Renglones)
           </button>
           <button
             onClick={() => setSubTab('partida_35201')}
@@ -197,14 +197,14 @@ export const CuentaPublicaView: React.FC<CuentaPublicaViewProps> = ({ dataset })
 
           </div>
 
-          {/* Comparativo Table */}
+          {/* Comparativo Table — Original vs Modificado vs Devengado desde AC01 real */}
           <div className="glass-panel rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-sm space-y-4">
             <div>
               <h3 className="text-lg font-extrabold text-slate-900 dark:text-white flex items-center gap-2">
                 <TrendingUp className="w-5 h-5 text-blue-600 dark:text-blue-400" />
-                Comparativo de Techo Presupuestal (Cuenta Pública 2024 vs 2025)
+                Presupuesto Autorizado AC01 2025 — Original vs Modificado vs Devengado
               </h3>
-              <p className="text-xs text-slate-500 dark:text-slate-400">Variación anual por capítulo de gasto</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400">Datos directos del Sheet de Cuenta Pública, agrupados por Capítulo de Gasto</p>
             </div>
 
             <div className="overflow-x-auto">
@@ -212,39 +212,46 @@ export const CuentaPublicaView: React.FC<CuentaPublicaViewProps> = ({ dataset })
                 <thead>
                   <tr className="bg-slate-50 dark:bg-slate-900 text-slate-500 uppercase text-[10px] font-bold border-b border-slate-200 dark:border-slate-800">
                     <th className="py-3 px-4">Capítulo</th>
-                    <th className="py-3 px-4">Descripción del Capítulo</th>
-                    <th className="py-3 px-4 text-right">Cuenta Pública 2024</th>
-                    <th className="py-3 px-4 text-right">Cuenta Pública 2025</th>
-                    <th className="py-3 px-4 text-right">Variación Neta ($)</th>
-                    <th className="py-3 px-4 text-right">% Cambio</th>
+                    <th className="py-3 px-4">Descripción</th>
+                    <th className="py-3 px-4 text-right">Original</th>
+                    <th className="py-3 px-4 text-right">Modificado (SHCP)</th>
+                    <th className="py-3 px-4 text-right">Devengado</th>
+                    <th className="py-3 px-4 text-right">% Ejercicio</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
-                  {capComparison.map(c => {
-                    const pct = ((c.diff / c.y2024) * 100).toFixed(1);
+                  {[
+                    { cap: "1000", desc: "Servicios Personales (Nómina)" },
+                    { cap: "2000", desc: "Materiales y Suministros Médicos" },
+                    { cap: "3000", desc: "Servicios Generales e Infraestructura" },
+                  ].map(c => {
+                    const orig = ac01Summary[c.cap]?.orig ?? 0;
+                    const mod = ac01Summary[c.cap]?.mod ?? 0;
+                    const dev = ac01Summary[c.cap]?.dev ?? 0;
+                    const pct = mod > 0 ? ((dev / mod) * 100).toFixed(2) : '—';
                     return (
                       <tr key={c.cap} className="hover:bg-slate-50 dark:hover:bg-slate-900/60">
-                        <td className="py-3.5 px-4 font-mono font-bold text-blue-600 dark:text-blue-400">
-                          Cap {c.cap}
-                        </td>
-                        <td className="py-3.5 px-4 font-semibold text-slate-900 dark:text-white">
-                          {c.desc}
-                        </td>
-                        <td className="py-3.5 px-4 text-right font-medium text-slate-600 dark:text-slate-300">
-                          {formatCurrency(c.y2024)}
-                        </td>
-                        <td className="py-3.5 px-4 text-right font-bold text-slate-900 dark:text-white">
-                          {formatCurrency(c.y2025)}
-                        </td>
-                        <td className={`py-3.5 px-4 text-right font-extrabold ${c.diff >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
-                          {c.diff >= 0 ? `+${formatCurrency(c.diff)}` : formatCurrency(c.diff)}
-                        </td>
-                        <td className={`py-3.5 px-4 text-right font-bold ${c.diff >= 0 ? 'text-emerald-600 dark:text-emerald-400' : 'text-amber-600 dark:text-amber-400'}`}>
-                          {c.diff >= 0 ? `+${pct}%` : `${pct}%`}
-                        </td>
+                        <td className="py-3.5 px-4 font-mono font-bold text-blue-600 dark:text-blue-400">Cap {c.cap}</td>
+                        <td className="py-3.5 px-4 font-semibold text-slate-900 dark:text-white">{c.desc}</td>
+                        <td className="py-3.5 px-4 text-right font-medium text-slate-500">{formatCurrency(orig)}</td>
+                        <td className="py-3.5 px-4 text-right font-bold text-amber-600 dark:text-amber-300">{formatCurrency(mod)}</td>
+                        <td className="py-3.5 px-4 text-right font-extrabold text-emerald-600 dark:text-emerald-400">{formatCurrency(dev)}</td>
+                        <td className="py-3.5 px-4 text-right font-bold text-slate-800 dark:text-slate-200">{pct}%</td>
                       </tr>
                     );
                   })}
+                  <tr className="bg-slate-50 dark:bg-slate-800/60 font-extrabold border-t-2 border-slate-300 dark:border-slate-600">
+                    <td className="py-3.5 px-4 font-mono text-slate-900 dark:text-white">TOTAL</td>
+                    <td className="py-3.5 px-4 text-slate-700 dark:text-slate-300">Presupuesto Institucional INPER</td>
+                    <td className="py-3.5 px-4 text-right text-slate-600">{formatCurrency(ac01Summary.total?.orig ?? 0)}</td>
+                    <td className="py-3.5 px-4 text-right text-amber-600 dark:text-amber-300">{formatCurrency(ac01Summary.total?.mod ?? 0)}</td>
+                    <td className="py-3.5 px-4 text-right text-emerald-600 dark:text-emerald-400">{formatCurrency(ac01Summary.total?.dev ?? 0)}</td>
+                    <td className="py-3.5 px-4 text-right text-slate-900 dark:text-white">
+                      {(ac01Summary.total?.mod ?? 0) > 0
+                        ? (((ac01Summary.total?.dev ?? 0) / (ac01Summary.total?.mod ?? 1)) * 100).toFixed(2) + '%'
+                        : '—'}
+                    </td>
+                  </tr>
                 </tbody>
               </table>
             </div>
