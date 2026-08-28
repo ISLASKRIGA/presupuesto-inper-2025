@@ -16,12 +16,48 @@ interface ChatMessage {
   streaming?: boolean;
 }
 
+interface InspirationalPhrase {
+  text: string;
+  author: string;
+}
+
+const INSPIRATIONAL_PHRASES: InspirationalPhrase[] = [
+  { text: "Todo lo puedo en Cristo que me fortalece.", author: "Filipenses 4:13" },
+  { text: "El Señor es mi pastor; nada me faltará.", author: "Salmo 23:1" },
+  { text: "El corazón alegre es buena medicina.", author: "Proverbios 17:22" },
+  { text: "Confía en el Señor con todo tu corazón, y no te apoyes en tu propia prudencia.", author: "Proverbios 3:5" },
+  { text: "Porque yo sé los pensamientos que tengo acerca de vosotros, pensamientos de paz y no de mal.", author: "Jeremías 29:11" },
+  { text: "Clama a mí, y yo te responderé, y te enseñaré cosas grandes y ocultas.", author: "Jeremías 33:3" },
+  { text: "Mira que te mando que te esfuerces y seas valiente; no temas ni desmayes.", author: "Josué 1:9" },
+  { text: "Los que esperan en el Señor renovarán sus fuerzas; levantarán alas como las águilas.", author: "Isaías 40:31" },
+  { text: "La respuesta blanda quita la ira; mas la palabra áspera hace subir el furor.", author: "Proverbios 15:1" },
+  { text: "Fuerza y honor son su vestidura; y se ríe de lo por venir.", author: "Proverbios 31:25" },
+  { text: "La fe es la certeza de lo que se espera, la convicción de lo que no se ve.", author: "Hebreos 11:1" },
+  { text: "Pidan, y se les dará; busquen, y encontrarán; llamen, y se les abrirá.", author: "Mateo 7:7" },
+  { text: "No nos cansemos, pues, de hacer bien; porque a su tiempo segaremos.", author: "Gálatas 6:9" },
+  { text: "Bienaventurados los pacificadores, porque ellos serán llamados hijos de Dios.", author: "Mateo 5:9" },
+  { text: "El Señor te guardará de todo mal; él guardará tu alma.", author: "Salmo 121:7" },
+  { text: "Pon en manos del Señor todas tus obras, y tus proyectos se cumplirán.", author: "Proverbios 16:3" },
+  { text: "Sobre toda cosa guardada, guarda tu corazón; porque de él mana la vida.", author: "Proverbios 4:23" },
+  { text: "Trata bien a todos los que encuentres, pues cada persona libra una batalla que desconoces.", author: "Platón" },
+  { text: "La paciencia es la compañera de la sabiduría.", author: "San Agustín" },
+  { text: "El bien que no se comparte se pierde.", author: "Francisco de Asís" },
+];
+
 export const ChatWidget: React.FC<ChatWidgetProps> = ({ dataset }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [inputMessage, setInputMessage] = useState('');
   const [isTyping, setIsTyping] = useState(false);
   const [activeKeyNum, setActiveKeyNum] = useState(1);
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [powerPhrase, setPowerPhrase] = useState<InspirationalPhrase>(INSPIRATIONAL_PHRASES[0]);
+
+  useEffect(() => {
+    if (isOpen) {
+      const randomIndex = Math.floor(Math.random() * INSPIRATIONAL_PHRASES.length);
+      setPowerPhrase(INSPIRATIONAL_PHRASES[randomIndex]);
+    }
+  }, [isOpen]);
 
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -145,9 +181,9 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ dataset }) => {
                 </div>
                 <div className="max-w-xs space-y-2">
                   <p className="text-xs italic text-slate-600 dark:text-slate-300 leading-relaxed font-serif">
-                    "Trata bien a todos los que encuentres, pues cada persona libra una batalla que desconoces."
+                    "{powerPhrase.text}"
                   </p>
-                  <p className="text-[11px] font-extrabold tracking-wider text-[#3C0C1F] dark:text-rose-400 uppercase">— PLATÓN</p>
+                  <p className="text-[11px] font-extrabold tracking-wider text-[#3C0C1F] dark:text-rose-400 uppercase">— {powerPhrase.author}</p>
                 </div>
               </div>
             )}
