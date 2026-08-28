@@ -30,7 +30,12 @@ export const formatCompactCurrency = (val: number): string => {
   return `$${val.toFixed(2)}`;
 };
 
+// Exclude blank summary rows from the Excel (no proveedor AND no ptda_code = header/subtotal rows)
+export const isValidTransaction = (item: BudgetItem): boolean =>
+  !!(item.proveedor?.trim() || item.ptda_code?.trim());
+
 export const computeKPIs = (items: BudgetItem[]): KPIStats => {
+  items = items.filter(isValidTransaction);
   let totalParcial = 0;
   let totalTotal = 0;
   let cap3000Parcial = 0;
@@ -67,6 +72,7 @@ export const computeKPIs = (items: BudgetItem[]): KPIStats => {
 };
 
 export const computeMonthlyBreakdown = (items: BudgetItem[]): MonthlyBreakdown[] => {
+  items = items.filter(isValidTransaction);
   const monthNames = [
     'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
     'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
@@ -113,6 +119,7 @@ export const computeMonthlyBreakdown = (items: BudgetItem[]): MonthlyBreakdown[]
 };
 
 export const computeTopPartidas = (items: BudgetItem[], limit: number = 10): PartidaGroup[] => {
+  items = items.filter(isValidTransaction).filter(i => i.ptda_code?.trim());
   const map = new Map<string, { desc: string; cap: string; totalParcial: number; totalTotal: number; count: number }>();
 
   items.forEach(item => {
@@ -143,6 +150,7 @@ export const computeTopPartidas = (items: BudgetItem[], limit: number = 10): Par
 };
 
 export const computeTopProveedores = (items: BudgetItem[], limit: number = 10): ProveedorGroup[] => {
+  items = items.filter(isValidTransaction).filter(i => i.proveedor?.trim());
   const map = new Map<string, { totalParcial: number; count: number; conceptos: Map<string, number> }>();
 
   items.forEach(item => {
@@ -178,6 +186,7 @@ export const computeTopProveedores = (items: BudgetItem[], limit: number = 10): 
 };
 
 export const computeCuentasBreakdown = (items: BudgetItem[]): CuentaGroup[] => {
+  items = items.filter(isValidTransaction).filter(i => i.cuenta_bancaria?.trim());
   const map = new Map<string, { total: number; count: number }>();
 
   items.forEach(item => {

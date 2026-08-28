@@ -12,7 +12,7 @@ import { SyncView } from './components/SyncView';
 import { ChatWidget } from './components/ChatWidget';
 import { BudgetItem, BudgetDataset } from './types/budget';
 import { fetchBudgetData, computeKPIs, formatCurrency } from './services/budgetService';
-import { Loader2, AlertCircle, Wallet } from 'lucide-react';
+import { Loader2, AlertCircle, Wallet, RefreshCw } from 'lucide-react';
 
 export function App() {
   const [activeTab, setActiveTab] = useState<string>('dashboard');
@@ -148,19 +148,46 @@ export function App() {
             </p>
           </div>
 
-          {/* Top Right Floating Value Pill */}
-          <div className="bg-white dark:bg-slate-900 rounded-2xl p-3.5 px-6 border border-slate-200 dark:border-slate-800 shadow-md flex items-center space-x-4">
-            <div>
-              <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block text-right">VALOR PRESUPUESTAL SHCP 🔒</span>
-              <span className="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono block text-right">
-                {formatCurrency(totalPresupuestoTecho)}
-              </span>
-            </div>
-            <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-200 dark:border-emerald-500/30">
-              <Wallet className="w-5 h-5" />
+          <div className="flex items-center gap-3 flex-wrap justify-end">
+            {/* Sync Button — always visible */}
+            <button
+              onClick={handleSync}
+              disabled={isSyncing}
+              className="flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white text-xs font-bold shadow-md transition-all disabled:opacity-50 disabled:cursor-not-allowed border border-blue-500"
+              title="Sincronizar datos desde Google Sheets"
+            >
+              <RefreshCw className={`w-3.5 h-3.5 ${isSyncing ? 'animate-spin' : ''}`} />
+              <span>{isSyncing ? 'Sincronizando...' : 'Sincronizar Sheets'}</span>
+            </button>
+
+            {/* Top Right Floating Value Pill */}
+            <div className="bg-white dark:bg-slate-900 rounded-2xl p-3.5 px-5 border border-slate-200 dark:border-slate-800 shadow-md flex items-center space-x-3">
+              <div>
+                <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-400 block text-right">VALOR PRESUPUESTAL SHCP</span>
+                <span className="text-xl font-black text-emerald-600 dark:text-emerald-400 font-mono block text-right">
+                  {formatCurrency(totalPresupuestoTecho)}
+                </span>
+              </div>
+              <div className="w-10 h-10 rounded-xl bg-emerald-50 dark:bg-emerald-500/20 text-emerald-600 dark:text-emerald-400 flex items-center justify-center border border-emerald-200 dark:border-emerald-500/30">
+                <Wallet className="w-5 h-5" />
+              </div>
             </div>
           </div>
         </div>
+
+        {/* Sync Progress Banner */}
+        {(isSyncing || (syncLogs.length > 0 && syncLogs[syncLogs.length - 1]?.includes('exitoso'))) && (
+          <div className={`rounded-2xl px-4 py-3 text-xs flex items-center gap-3 border ${
+            isSyncing
+              ? 'bg-blue-50 dark:bg-blue-950/40 border-blue-200 dark:border-blue-700/50 text-blue-800 dark:text-blue-300'
+              : 'bg-emerald-50 dark:bg-emerald-950/40 border-emerald-200 dark:border-emerald-700/50 text-emerald-800 dark:text-emerald-300'
+          }`}>
+            <RefreshCw className={`w-4 h-4 flex-shrink-0 ${isSyncing ? 'animate-spin text-blue-500' : 'text-emerald-500'}`} />
+            <span className="font-mono font-semibold">
+              {syncLogs[syncLogs.length - 1] || 'Conectando con Google Sheets...'}
+            </span>
+          </div>
+        )}
 
         {/* Error Notification Banner */}
         {errorMsg && (

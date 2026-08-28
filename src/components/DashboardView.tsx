@@ -24,13 +24,14 @@ import {
   Treemap
 } from 'recharts';
 import { BudgetItem, KPIStats, AC01Summary, AC01Record } from '../types/budget';
-import { 
-  computeMonthlyBreakdown, 
-  computeTopPartidas, 
-  computeTopProveedores, 
-  computeCuentasBreakdown, 
-  formatCurrency, 
-  formatCompactCurrency 
+import {
+  computeMonthlyBreakdown,
+  computeTopPartidas,
+  computeTopProveedores,
+  computeCuentasBreakdown,
+  isValidTransaction,
+  formatCurrency,
+  formatCompactCurrency
 } from '../services/budgetService';
 import { 
   TrendingUp, 
@@ -114,16 +115,18 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ items, kpis, ac01S
     { subject: 'Cobertura Proveedores', A: Math.min(kpis.totalProveedores / 5, 100), fullMark: 100 },
   ];
 
-  // 5. Top partidas por capítulo (desde records reales)
-  const top5_3000 = topPartidas.filter(p => p.capitulo === '3000').slice(0, 5);
-  const top5_2000 = topPartidas.filter(p => p.capitulo === '2000').slice(0, 5);
+  // 5. Top partidas por capítulo (desde records reales, separado por cap para obtener top 5 real por cada uno)
+  const top5_3000 = computeTopPartidas(items.filter(i => i.capitulo_code === '3000'), 5);
+  const top5_2000 = computeTopPartidas(items.filter(i => i.capitulo_code === '2000'), 5);
   const partidaCompData = [
     ...top5_3000.map(p => ({ label: p.code, cap3000: p.totalParcial, cap2000: 0 })),
     ...top5_2000.map(p => ({ label: p.code, cap3000: 0, cap2000: p.totalParcial })),
   ];
 
-  // 6. Scatter: todas las transacciones > umbral ordenadas por monto
+  // 6. Scatter: top 50 transacciones válidas (con proveedor y partida) ordenadas por monto
   const scatterData = [...items]
+    .filter(isValidTransaction)
+    .filter(i => i.proveedor?.trim() && i.ptda_code?.trim())
     .sort((a, b) => b.importe_parcial - a.importe_parcial)
     .slice(0, 50)
     .map((item, idx) => ({
@@ -133,7 +136,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ items, kpis, ac01S
       name: item.proveedor || item.concepto || `Op #${idx + 1}`
     }));
 
-  // 7. Treemap: top partidas por cap como bloques reales
+  // 7. Treemap: top partidas válidas por cap (ya filtradas por computeTopPartidas)
   const treemapData = [
     {
       name: 'Capítulo 1000 (Nómina)',
@@ -141,13 +144,19 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ items, kpis, ac01S
     },
     {
       name: 'Capítulo 3000',
-      children: top5_3000.slice(0, 4).map(p => ({ name: p.desc || p.code, size: p.totalParcial }))
+      children: top5_3000
+        .filter(p => p.code && p.code !== 'SIN_PARTIDA')
+        .slice(0, 4)
+        .map(p => ({ name: p.desc?.replace(/^\d+ - /, '').slice(0, 30) || p.code, size: p.totalParcial }))
     },
     {
       name: 'Capítulo 2000',
-      children: top5_2000.slice(0, 4).map(p => ({ name: p.desc || p.code, size: p.totalParcial }))
+      children: top5_2000
+        .filter(p => p.code && p.code !== 'SIN_PARTIDA')
+        .slice(0, 4)
+        .map(p => ({ name: p.desc?.replace(/^\d+ - /, '').slice(0, 30) || p.code, size: p.totalParcial }))
     }
-  ].filter(g => g.children.some(c => c.size > 0));
+  ].filter(g => g.children.length > 0 && g.children.some(c => c.size > 0));
 
   const customTooltipStyle = {
     backgroundColor: '#ffffff',
@@ -176,7 +185,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ items, kpis, ac01S
             Suite Completa de 12 Gráficas Financieras INPER 2025
           </h2>
           <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-            Herramientas visuales de alta fidelidad basadas en los 3,637 registros contables auditados
+            {items.filter(isValidTransaction).length.toLocaleString()} transacciones válidas · {items.length.toLocaleString()} registros totales del sheet
           </p>
         </div>
 
@@ -252,31 +261,31 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ items, kpis, ac01S
         </div>
       </div>
 
-      {/* MEDIDOR / BULLET CHART: Meta de Eficiencia Presupuestal SHCP */}
+      {/* MEDIDOR / BULLET CHART: Meta de Eficiencia Presupuestal SHCP — valores del AC01 real */}
       <div className="bg-white dark:bg-slate-900 rounded-3xl p-6 border border-slate-200/80 dark:border-slate-800 shadow-xs space-y-3">
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Target className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
             <h3 className="text-sm font-black text-slate-900 dark:text-white">
-              Medidor Bullet Chart: Eficiencia de Ejercicio Presupuestario frente a Meta SHCP (99.69%)
+              Medidor Bullet Chart: Eficiencia de Ejercicio Presupuestario frente a Meta SHCP ({eficiencia.toFixed(2)}%)
             </h3>
           </div>
           <span className="text-xs font-mono font-bold text-emerald-600 dark:text-emerald-400">
-            $1,312.93 M / $1,317.06 M
+            {formatCompactCurrency(ac01Summary?.total?.dev ?? 0)} / {formatCompactCurrency(ac01Summary?.total?.mod ?? 0)}
           </span>
         </div>
-        
+
         <div className="w-full bg-slate-100 dark:bg-slate-800 h-6 rounded-full overflow-hidden relative p-1 border border-slate-200 dark:border-slate-700">
-          <div 
-            className="h-full rounded-full bg-gradient-to-r from-emerald-600 via-teal-500 to-blue-600 transition-all duration-1000 shadow-xs" 
-            style={{ width: '99.69%' }}
+          <div
+            className="h-full rounded-full bg-gradient-to-r from-emerald-600 via-teal-500 to-blue-600 transition-all duration-1000 shadow-xs"
+            style={{ width: `${Math.min(eficiencia, 100)}%` }}
           ></div>
           <div className="absolute right-0 top-0 bottom-0 w-1 bg-rose-500 shadow-md" title="Meta SHCP 100%"></div>
         </div>
         <div className="flex justify-between text-[11px] font-bold text-slate-500">
           <span>0% (Inicio del Ejercicio)</span>
-          <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">99.69% Ejercido Sin Subejercicio</span>
-          <span>100% Meta SHCP ($1.32 B)</span>
+          <span className="text-emerald-600 dark:text-emerald-400 font-extrabold">{eficiencia.toFixed(2)}% Ejercido</span>
+          <span>100% Meta SHCP ({formatCompactCurrency(ac01Summary?.total?.mod ?? 0)})</span>
         </div>
       </div>
 
@@ -701,7 +710,7 @@ export const DashboardView: React.FC<DashboardViewProps> = ({ items, kpis, ac01S
                       outerRadius={80}
                       paddingAngle={4}
                       dataKey="total"
-                      nameKey="account"
+                      nameKey="name"
                     >
                       {cuentasData.map((_, index) => (
                         <Cell key={`cell-${index}`} fill={['#10b981', '#3b82f6', '#8b5cf6', '#f59e0b'][index % 4]} />
