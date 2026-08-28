@@ -154,14 +154,14 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ dataset }) => {
 
                 <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-xs leading-relaxed ${
                   msg.sender === 'user'
-                    ? 'bg-gradient-to-r from-[#3C0C1F] to-[#4A1027] text-white shadow-md rounded-br-none border border-amber-400/30'
-                    : 'bg-white dark:bg-slate-800 text-slate-800 dark:text-slate-100 border border-slate-200/80 dark:border-slate-700/80 shadow-xs rounded-bl-none font-sans whitespace-pre-wrap'
+                    ? 'bg-[#f0f4f9] dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-xs rounded-br-none font-medium'
+                    : 'bg-white dark:bg-slate-900 text-slate-800 dark:text-slate-100 border border-slate-200/80 dark:border-slate-800 shadow-xs rounded-bl-none font-sans whitespace-pre-wrap'
                 }`}>
-                  {msg.text || (msg.streaming ? <span className="inline-block w-2 h-3 bg-slate-400 animate-pulse rounded-sm align-middle" /> : '')}
+                  {msg.text.replace(/\*/g, '') || (msg.streaming ? <span className="inline-block w-2 h-3 bg-slate-400 animate-pulse rounded-sm align-middle" /> : '')}
                   {msg.streaming && msg.text && (
                     <span className="inline-block w-1.5 h-3 bg-slate-400 animate-pulse rounded-sm align-middle ml-0.5" />
                   )}
-                  <div className={`text-[9px] mt-1 text-right font-mono ${msg.sender === 'user' ? 'text-amber-200/70' : 'text-slate-400'}`}>
+                  <div className={`text-[9px] mt-1 text-right font-mono ${msg.sender === 'user' ? 'text-slate-400' : 'text-slate-400'}`}>
                     {msg.timestamp}
                   </div>
                 </div>
