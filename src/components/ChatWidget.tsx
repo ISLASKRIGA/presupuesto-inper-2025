@@ -120,7 +120,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ dataset }) => {
               </div>
             </div>
             <div className="text-[10px] font-mono text-amber-700 dark:text-amber-300 bg-amber-50 dark:bg-amber-900/30 px-2.5 py-1 rounded-full border border-amber-200 dark:border-amber-700/50 font-bold">
-              Key #{activeKeyNum}/{Math.max((import.meta as any).env?.VITE_GEMINI_API_KEYS?.split(',').length ?? 41, 41)} 🔄
+              Key #{activeKeyNum}/{(import.meta as any).env?.VITE_GEMINI_API_KEYS?.split(',').filter(Boolean).length || 1} 🔄
             </div>
           </div>
 

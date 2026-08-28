@@ -86,7 +86,7 @@ export const streamGeminiBudgetBot = async (
   for (let attempt = 0; attempt < API_KEYS.length; attempt++) {
     const { key, index } = getNextApiKey();
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:streamGenerateContent?alt=sse&key=${key}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:streamGenerateContent?alt=sse&key=${key}`;
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
