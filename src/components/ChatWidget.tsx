@@ -22,6 +22,16 @@ interface InspirationalPhrase {
 }
 
 const INSPIRATIONAL_PHRASES: InspirationalPhrase[] = [
+  { text: "No nos afecta lo que nos sucede, sino lo que nos decimos sobre lo que nos sucede.", author: "Epicteto" },
+  { text: "Tienes poder sobre tu mente, no sobre los acontecimientos externos. Date cuenta de esto y encontrarás la fuerza.", author: "Marco Aurelio" },
+  { text: "La felicidad de tu vida depende de la calidad de tus pensamientos.", author: "Marco Aurelio" },
+  { text: "No hay viento favorable para el que no sabe a qué puerto se dirige.", author: "Séneca" },
+  { text: "Sufrimos más a menudo en la imaginación que en la realidad.", author: "Séneca" },
+  { text: "La mejor venganza es no ser como tu enemigo.", author: "Marco Aurelio" },
+  { text: "El obstáculo es el camino.", author: "Marco Aurelio" },
+  { text: "Decide ser excelente ahora, en este momento. No mañana.", author: "Epicteto" },
+  { text: "No te sientas avergonzado de necesitar ayuda; tienes una misión que cumplir.", author: "Marco Aurelio" },
+  { text: "El hombre que sufre antes de que sea necesario, sufre más de lo necesario.", author: "Séneca" },
   { text: "Todo lo puedo en Cristo que me fortalece.", author: "Filipenses 4:13" },
   { text: "El Señor es mi pastor; nada me faltará.", author: "Salmo 23:1" },
   { text: "El corazón alegre es buena medicina.", author: "Proverbios 17:22" },
@@ -41,7 +51,7 @@ const INSPIRATIONAL_PHRASES: InspirationalPhrase[] = [
   { text: "Sobre toda cosa guardada, guarda tu corazón; porque de él mana la vida.", author: "Proverbios 4:23" },
   { text: "Trata bien a todos los que encuentres, pues cada persona libra una batalla que desconoces.", author: "Platón" },
   { text: "La paciencia es la compañera de la sabiduría.", author: "San Agustín" },
-  { text: "El bien que no se comparte se pierde.", author: "Francisco de Asís" },
+  { text: "El bien que no se comparte se pierde.", author: "Francisco de Asís" }
 ];
 
 export const ChatWidget: React.FC<ChatWidgetProps> = ({ dataset }) => {
