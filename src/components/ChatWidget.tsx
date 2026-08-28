@@ -144,14 +144,8 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ dataset }) => {
             {messages.map((msg) => (
               <div
                 key={msg.id}
-                className={`flex items-start space-x-2.5 ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
+                className={`flex items-start ${msg.sender === 'user' ? 'justify-end' : 'justify-start'}`}
               >
-                {msg.sender === 'bot' && (
-                  <div className="w-7 h-7 rounded-full bg-gradient-to-tr from-[#3C0C1F] to-[#5A1430] text-amber-300 flex items-center justify-center flex-shrink-0 shadow-xs border border-amber-400/30">
-                    <Sparkles className={`w-3.5 h-3.5 ${msg.streaming ? 'animate-spin' : ''}`} />
-                  </div>
-                )}
-
                 <div className={`max-w-[85%] rounded-2xl px-4 py-3 text-xs leading-relaxed ${
                   msg.sender === 'user'
                     ? 'bg-[#f0f4f9] dark:bg-slate-800 text-slate-900 dark:text-slate-100 shadow-xs rounded-br-none font-medium'
@@ -161,16 +155,7 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ dataset }) => {
                   {msg.streaming && msg.text && (
                     <span className="inline-block w-1.5 h-3 bg-slate-400 animate-pulse rounded-sm align-middle ml-0.5" />
                   )}
-                  <div className={`text-[9px] mt-1 text-right font-mono ${msg.sender === 'user' ? 'text-slate-400' : 'text-slate-400'}`}>
-                    {msg.timestamp}
-                  </div>
                 </div>
-
-                {msg.sender === 'user' && (
-                  <div className="w-7 h-7 rounded-full bg-slate-200 dark:bg-slate-700 text-slate-600 dark:text-slate-300 flex items-center justify-center flex-shrink-0">
-                    <User className="w-3.5 h-3.5" />
-                  </div>
-                )}
               </div>
             ))}
 
