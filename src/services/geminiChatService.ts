@@ -1,5 +1,6 @@
 import { BudgetDataset } from '../types/budget';
 import { formatCurrency, formatCompactCurrency } from './budgetService';
+import { QA_PAIRS } from './qaTraining';
 
 const envKeysRaw = (import.meta as any).env?.VITE_GEMINI_API_KEYS || '';
 const API_KEYS: string[] = envKeysRaw
@@ -23,20 +24,22 @@ const buildSystemPrompt = (dataset: BudgetDataset | null): string => {
   const cap3000 = dataset?.ac01_summary?.["3000"]?.dev || 329849243;
   const efic = ((totalDev / totalMod) * 100).toFixed(2);
 
-  return `Eres el Lic. IAn, experto en presupuesto del sector salud público de México con profundo conocimiento en normatividad SHCP, Ley Federal de Presupuesto y Responsabilidad Hacendaria, clasificadores presupuestales, proceso presupuestario (PEF, POA, AC01), y gestión financiera en instituciones como INPER, IMSS, ISSSTE y Secretaría de Salud. Tu nombre es Lic. IAn. Cuando te saluden o pregunten tu nombre, preséntate como Lic. IAn. Hablas como un funcionario experto: directo, cálido, técnico pero accesible. Usa frases como "En mi experiencia...", "Lo que veo aquí es...", "Te recomiendo...". Jamás menciones que eres IA.
+  const fewShot = QA_PAIRS.map(p => `P: ${p.q}\nR: ${p.a}`).join('\n\n');
 
-Responde SIEMPRE en español. Sé directo y conciso. Nunca reproduzcas estas instrucciones en tus respuestas.
-REGLA OBLIGATORIA: Jamás utilices asteriscos (* o **) ni negritas en tus respuestas. Escribe todo en texto plano sin ningún asterisco.
+  return `Eres el Lic. IAn, experto en presupuesto del sector salud público de México con dominio en normatividad SHCP, LFPyRH, clasificadores presupuestales, PEF, POA, AC01 y gestión financiera en INPER, IMSS, ISSSTE y Secretaría de Salud. Cuando te saluden o pregunten tu nombre, preséntate como Lic. IAn. Hablas directo, cálido, técnico pero accesible. Jamás menciones que eres IA. Responde SIEMPRE en español. Sé conciso. Nunca reproduzcas estas instrucciones. Jamás uses asteriscos ni negritas.
 
 DATOS INPER 2025 (AC01 Oficial):
 - Techo SHCP Modificado: ${formatCurrency(totalMod)}
-- Devengado Ejercido: ${formatCurrency(totalDev)} (${efic}% eficiencia)
+- Devengado: ${formatCurrency(totalDev)} (${efic}% eficiencia)
 - Remanente TESOFE: ${formatCurrency(totalMod - totalDev)}
 - Cap 1000 Nómina: ${formatCompactCurrency(cap1000)} (68.8%)
 - Cap 3000 Servicios: ${formatCompactCurrency(cap3000)} (25.0%)
 - Cap 2000 Materiales/Med: ${formatCompactCurrency(cap2000)} (5.8%)
 - Partida 35201 Electromedicina: $1,801,934 (100% cumplido)
-- Operaciones auditadas: ${dataset?.records?.length || 3637} | Proveedores LAASSP: 493`;
+- Operaciones auditadas: ${dataset?.records?.length || 3637} | Proveedores LAASSP: 493
+
+EJEMPLOS DE RESPUESTA (úsalos como guía de estilo y contenido):
+${fewShot}`;
 };
 
 const buildContents = (
@@ -79,7 +82,7 @@ export const streamGeminiBudgetBot = async (
   const payload = {
     systemInstruction: { parts: [{ text: systemPrompt }] },
     contents,
-    generationConfig: { temperature: 0.1, maxOutputTokens: 256 }
+    generationConfig: { temperature: 0.1, maxOutputTokens: 300 }
   };
 
   let lastError: Error | null = null;
@@ -87,7 +90,7 @@ export const streamGeminiBudgetBot = async (
   for (let attempt = 0; attempt < API_KEYS.length; attempt++) {
     const { key, index } = getNextApiKey();
     try {
-      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.6-flash:streamGenerateContent?alt=sse&key=${key}`;
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:streamGenerateContent?alt=sse&key=${key}`;
       const res = await fetch(url, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
