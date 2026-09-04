@@ -1,7 +1,7 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import { X, Send, Plus, ChevronDown, Sparkles, User, RotateCcw } from 'lucide-react';
 import { BudgetDataset } from '../types/budget';
-import { streamGeminiBudgetBot } from '../services/geminiChatService';
+import { streamGeminiBudgetBot, streamLocalFallbackResponse } from '../services/geminiChatService';
 
 interface ChatWidgetProps {
   dataset: BudgetDataset | null;
@@ -131,12 +131,22 @@ export const ChatWidget: React.FC<ChatWidgetProps> = ({ dataset }) => {
         setIsTyping(false);
       },
       onError: () => {
-        setMessages(prev =>
-          prev.map(m => m.id === botId
-            ? { ...m, text: 'Lo siento, ocurrió un error al consultar. Por favor intenta de nuevo.', streaming: false }
-            : m)
-        );
-        setIsTyping(false);
+        streamLocalFallbackResponse(query, dataset, {
+          onChunk: (delta) => {
+            setMessages(prev =>
+              prev.map(m => m.id === botId ? { ...m, text: m.text + delta } : m)
+            );
+          },
+          onDone: () => {
+            setMessages(prev =>
+              prev.map(m => m.id === botId ? { ...m, streaming: false } : m)
+            );
+            setIsTyping(false);
+          },
+          onError: () => {
+            setIsTyping(false);
+          }
+        });
       }
     });
   };
